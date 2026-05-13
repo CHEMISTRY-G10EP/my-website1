@@ -4,7 +4,6 @@
   <title>Admin Panel</title>
 
   <style>
-
     body{
       font-family:Arial;
       padding:30px;
@@ -28,7 +27,6 @@
     }
 
     input, textarea, select{
-
       width:100%;
       padding:12px;
       margin-bottom:18px;
@@ -38,12 +36,9 @@
       box-sizing:border-box;
     }
 
-    textarea{
-      resize:vertical;
-    }
+    textarea{ resize:vertical; }
 
     .btn{
-
       border:none;
       padding:12px 20px;
       border-radius:8px;
@@ -59,18 +54,12 @@
       color:white;
     }
 
-    .create-btn:hover{
-      background:#218838;
-      transform:scale(1.03);
-    }
-
     .dashboard-btn{
       background:#007bff;
       color:white;
     }
 
-    .dashboard-btn:hover{
-      background:#0056b3;
+    .btn:hover{
       transform:scale(1.03);
     }
 
@@ -78,7 +67,6 @@
       margin-top:20px;
       font-weight:bold;
       text-align:center;
-      font-size:16px;
     }
 
     .note{
@@ -89,63 +77,63 @@
       color:#856404;
     }
 
+    .card{
+      background:#fff;
+      padding:15px;
+      margin:10px 0;
+      border-radius:10px;
+      box-shadow:0 0 5px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
+
 <body>
 
 <div class="container">
 
-  <h2>Admin - Create Test</h2>
+  <h2>Admin Panel</h2>
 
   <div class="note">
-    Create class-wise tests for students.
+    Create tests and view all student results.
   </div>
 
+  <!-- ================= CREATE TEST ================= -->
+
   <select id="className">
-
     <option value="">Select Class</option>
-
     <option value="10">Class 10</option>
     <option value="11">Class 11</option>
     <option value="12">Class 12</option>
     <option value="IIT-JEE">IIT-JEE</option>
     <option value="NEET">NEET</option>
-
   </select>
 
-  <input
-    id="title"
-    placeholder="Enter Test Title"
-  >
+  <input id="title" placeholder="Enter Test Title">
 
-  <textarea
-    id="jsonInput"
-    rows="18"
-
+  <textarea id="jsonInput" rows="12"
 placeholder='[
   {
-    "question": "What is the chemical formula of water?",
-    "options": ["H2O","CO2","O2","NaCl"],
-    "answer": "H2O",
-    "solution": "Water is made of Hydrogen and Oxygen. Formula is H2O."
+    "question": "What is H2O?",
+    "options": ["Water","Oxygen","Hydrogen","Salt"],
+    "answer": "Water",
+    "solution": "H2O is water"
   }
 ]'></textarea>
 
-  <button
-    class="btn create-btn"
-    onclick="createTest()"
-  >
-    Create Test
-  </button>
+  <button class="btn create-btn" onclick="createTest()">Create Test</button>
 
-  <button
-    class="btn dashboard-btn"
-    onclick="goDashboard()"
-  >
-    Dashboard
-  </button>
+  <button class="btn dashboard-btn" onclick="goDashboard()">Dashboard</button>
 
   <p id="msg"></p>
+
+  <hr>
+
+  <!-- ================= RESULTS ================= -->
+
+  <h2>Student Results</h2>
+  <button class="btn dashboard-btn" onclick="loadResults()">Load Results</button>
+
+  <div id="resultsBox"></div>
 
 </div>
 
@@ -155,114 +143,93 @@ import { db, auth } from './firebase-config.js';
 
 import {
   addDoc,
-  collection
+  collection,
+  getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-auth.onAuthStateChanged((user)=>{
 
-  if(!user){
-
+// ================= AUTH CHECK =================
+auth.onAuthStateChanged((user) => {
+  if (!user) {
     alert("Login required!");
-
     window.location.href = "index.html";
   }
 });
 
+
+// ================= CREATE TEST =================
 window.createTest = async function () {
 
   try {
 
-    let className =
-      document.getElementById("className").value;
+    let className = document.getElementById("className").value;
+    let title = document.getElementById("title").value.trim();
+    let jsonText = document.getElementById("jsonInput").value.trim();
 
-    let title =
-      document.getElementById("title").value.trim();
-
-    let jsonText =
-      document.getElementById("jsonInput").value.trim();
-
-    if (!className) {
-      throw new Error("Please select class");
-    }
-
-    if (!title) {
-      throw new Error("Title is required");
-    }
-
-    if (!jsonText) {
-      throw new Error("Questions are required");
-    }
+    if (!className) throw new Error("Select class");
+    if (!title) throw new Error("Enter title");
+    if (!jsonText) throw new Error("Enter questions");
 
     let questions = JSON.parse(jsonText);
 
-    if (!Array.isArray(questions)) {
-      throw new Error("Questions must be an array");
-    }
-
-    questions.forEach((q, index) => {
-
-      if (!q.question) {
-        throw new Error(
-          `Question missing at index ${index}`
-        );
-      }
-
-      if (!q.options ||
-          !Array.isArray(q.options)) {
-
-        throw new Error(
-          `Options missing at question ${index + 1}`
-        );
-      }
-
-      if (!q.answer) {
-
-        throw new Error(
-          `Answer missing at question ${index + 1}`
-        );
-      }
-
-      if (!q.solution) {
-
-        q.solution =
-          "No solution provided";
-      }
-    });
-
     await addDoc(collection(db, "tests"), {
-
       className,
       title,
       questions,
       createdAt: new Date().toISOString()
-
     });
 
-    document.getElementById("msg").style.color =
-      "green";
-
-    document.getElementById("msg").innerText =
-      "Test Created Successfully!";
+    document.getElementById("msg").style.color = "green";
+    document.getElementById("msg").innerText = "Test Created Successfully!";
 
     document.getElementById("title").value = "";
-
     document.getElementById("jsonInput").value = "";
-
     document.getElementById("className").value = "";
 
-  }
-  catch (e) {
-
-    document.getElementById("msg").style.color =
-      "red";
-
-    document.getElementById("msg").innerText =
-      "Error: " + e.message;
+  } catch (e) {
+    document.getElementById("msg").style.color = "red";
+    document.getElementById("msg").innerText = e.message;
   }
 };
 
-window.goDashboard = function(){
 
+// ================= LOAD RESULTS =================
+window.loadResults = async function () {
+
+  let box = document.getElementById("resultsBox");
+  box.innerHTML = "Loading...";
+
+  const snap = await getDocs(collection(db, "results"));
+
+  box.innerHTML = "";
+
+  if (snap.empty) {
+    box.innerHTML = "No results found";
+    return;
+  }
+
+  snap.forEach(doc => {
+
+    let r = doc.data();
+
+    box.innerHTML += `
+      <div class="card">
+
+        <b>Student:</b> ${r.studentName}<br>
+        <b>Class:</b> ${r.studentClass}<br>
+        <b>Email:</b> ${r.userEmail}<br>
+        <b>Test:</b> ${r.testTitle}<br>
+        <b>Score:</b> ${r.score} / ${r.total}<br>
+        <b>Date:</b> ${r.createdAt}
+
+      </div>
+    `;
+  });
+};
+
+
+// ================= DASHBOARD =================
+window.goDashboard = function () {
   window.location.href = "dashboard.html";
 };
 
