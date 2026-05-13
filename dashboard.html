@@ -1,37 +1,110 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Dashboard</title>
+  <title>Student Dashboard</title>
+
+  <style>
+    body{
+      font-family:Arial;
+      padding:20px;
+      background:#f4f4f4;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+
+    button{
+      padding:10px 15px;
+      cursor:pointer;
+      margin:5px;
+    }
+
+    .test-card{
+      background:white;
+      padding:15px;
+      margin-bottom:15px;
+      border-radius:8px;
+      box-shadow:0 0 5px rgba(0,0,0,0.1);
+    }
+
+    h2,h3,h4{
+      margin:5px 0;
+    }
+  </style>
 </head>
 <body>
 
-<h2>Student Dashboard</h2>
+<div class="topbar">
+
+  <div>
+    <h2>Student Dashboard</h2>
+    <p id="userEmail"></p>
+  </div>
+
+  <div>
+    <button onclick="goResults()">Previous Results</button>
+    <button onclick="logout()">Logout</button>
+  </div>
+
+</div>
 
 <button onclick="loadTest()">Load Monthly Test</button>
 
 <div id="testBox"></div>
 
 <script type="module">
+
 import { db, auth } from './firebase-config.js';
+
 import {
   collection,
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import {
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+auth.onAuthStateChanged((user)=>{
+
+  if(!user){
+    alert("Login required");
+    window.location.href = "index.html";
+    return;
+  }
+
+  document.getElementById("userEmail").innerText =
+    "Logged in as: " + user.email;
+});
+
 window.loadTest = async function () {
+
   const querySnapshot = await getDocs(collection(db, "tests"));
 
   let html = "<h3>Available Tests</h3>";
 
+  if(querySnapshot.empty){
+    html += "<p>No tests available.</p>";
+  }
+
   querySnapshot.forEach((doc) => {
+
     let t = doc.data();
 
     html += `
-      <div>
+      <div class="test-card">
+
         <h4>${t.title}</h4>
-        <button onclick="startTest('${doc.id}')">Start</button>
+
+        <button onclick="startTest('${doc.id}')">
+          Start Test
+        </button>
+
       </div>
-      <hr>
     `;
   });
 
@@ -39,9 +112,26 @@ window.loadTest = async function () {
 };
 
 window.startTest = function(testId){
+
   localStorage.setItem("testId", testId);
+
   window.location.href = "test.html";
 };
+
+window.goResults = function(){
+
+  window.location.href = "results.html";
+};
+
+window.logout = async function(){
+
+  await signOut(auth);
+
+  alert("Logged out successfully");
+
+  window.location.href = "index.html";
+};
+
 </script>
 
 </body>
