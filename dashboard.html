@@ -4,7 +4,6 @@
   <title>Student Dashboard</title>
 
   <style>
-
     body{
       font-family:Arial;
       background:#eef2f7;
@@ -18,17 +17,14 @@
     }
 
     .topbar{
-
       background:white;
       padding:20px;
       border-radius:15px;
       box-shadow:0 0 10px rgba(0,0,0,0.1);
-
       display:flex;
       justify-content:space-between;
       align-items:center;
       flex-wrap:wrap;
-
       margin-bottom:25px;
     }
 
@@ -43,7 +39,6 @@
     }
 
     .btn{
-
       border:none;
       padding:12px 18px;
       border-radius:8px;
@@ -85,7 +80,6 @@
     }
 
     .test-card{
-
       background:white;
       padding:20px;
       margin-bottom:20px;
@@ -93,13 +87,7 @@
       box-shadow:0 0 8px rgba(0,0,0,0.08);
     }
 
-    .test-card h3{
-      margin-top:0;
-      color:#333;
-    }
-
     .class-badge{
-
       display:inline-block;
       background:#17a2b8;
       color:white;
@@ -112,6 +100,10 @@
     .start-btn{
       background:#6f42c1;
       color:white;
+      border:none;
+      padding:10px 15px;
+      border-radius:8px;
+      cursor:pointer;
     }
 
     .start-btn:hover{
@@ -122,9 +114,9 @@
     #testBox{
       margin-top:20px;
     }
-
   </style>
 </head>
+
 <body>
 
 <div class="container">
@@ -132,39 +124,23 @@
   <div class="topbar">
 
     <div class="student-info">
-
       <h2>Student Dashboard</h2>
-
-      <p id="userInfo">
-        Loading student info...
-      </p>
-
+      <p id="userInfo">Loading student info...</p>
     </div>
 
     <div>
-
-      <button
-        class="btn result-btn"
-        onclick="goResults()"
-      >
+      <button class="btn result-btn" onclick="goResults()">
         Previous Results
       </button>
 
-      <button
-        class="btn logout-btn"
-        onclick="logout()"
-      >
+      <button class="btn logout-btn" onclick="logout()">
         Logout
       </button>
-
     </div>
 
   </div>
 
-  <button
-    class="btn load-btn"
-    onclick="loadTest()"
-  >
+  <button class="btn load-btn" onclick="loadTest()">
     Load Monthly Test
   </button>
 
@@ -178,6 +154,8 @@ import { db, auth } from './firebase-config.js';
 
 import {
   collection,
+  query,
+  where,
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -187,103 +165,74 @@ import {
 
 let studentData = null;
 
+/* =======================
+   LOAD STUDENT PROFILE
+======================= */
 auth.onAuthStateChanged(async(user)=>{
 
   if(!user){
-
     alert("Login required");
-
     window.location.href = "index.html";
-
     return;
   }
 
-  const studentSnapshot =
-    await getDocs(collection(db, "students"));
+  const q = query(
+    collection(db, "students"),
+    where("email", "==", user.email)
+  );
 
-  studentSnapshot.forEach((doc)=>{
+  const snapshot = await getDocs(q);
 
-    let s = doc.data();
-
-    if(s.email === user.email){
-
-      studentData = s;
-    }
-  });
-
-  if(!studentData){
-
-    document.getElementById("userInfo")
-      .innerHTML =
+  if(snapshot.empty){
+    document.getElementById("userInfo").innerHTML =
       "Student profile not found";
-
     return;
   }
 
-  localStorage.setItem(
-    "studentName",
-    studentData.name
-  );
+  studentData = snapshot.docs[0].data();
 
-  localStorage.setItem(
-    "studentClass",
-    studentData.class
-  );
-
-  document.getElementById("userInfo")
-    .innerHTML = `
-
-      <b>Name:</b> ${studentData.name}<br>
-
-      <b>Class:</b> ${studentData.class}<br>
-
-      <b>Email:</b> ${studentData.email}
-    `;
+  document.getElementById("userInfo").innerHTML = `
+    <b>Name:</b> ${studentData.name}<br>
+    <b>Class:</b> ${studentData.class}<br>
+    <b>Email:</b> ${studentData.email}
+  `;
 });
 
+
+/* =======================
+   LOAD CLASS TESTS
+======================= */
 window.loadTest = async function () {
 
   if(!studentData){
-
-    alert("Student data not loaded");
-
+    alert("Student data not loaded yet");
     return;
   }
 
-  const querySnapshot =
-    await getDocs(collection(db, "tests"));
+  const querySnapshot = await getDocs(collection(db, "tests"));
 
   let html = "<h2>Available Tests</h2>";
-
   let found = false;
 
   querySnapshot.forEach((doc)=>{
 
     let t = doc.data();
 
-    if(t.className !== studentData.class){
-
-      return;
-    }
+    // SAFE CLASS CHECK
+    if(String(t.className) !== String(studentData.class)) return;
 
     found = true;
 
     html += `
-
       <div class="test-card">
 
         <div class="class-badge">
-
-          ${t.className}
-
+          Class ${t.className}
         </div>
 
         <h3>${t.title}</h3>
 
-        <button
-          class="btn start-btn"
-          onclick="startTest('${doc.id}')"
-        >
+        <button class="start-btn" onclick="startTest('${doc.id}')">
           Start Test
         </button>
 
@@ -292,36 +241,36 @@ window.loadTest = async function () {
   });
 
   if(!found){
-
-    html += `
-      <p>
-        No tests available for your class.
-      </p>
-    `;
+    html += `<p>No tests available for your class.</p>`;
   }
 
-  document.getElementById("testBox")
-    .innerHTML = html;
+  document.getElementById("testBox").innerHTML = html;
 };
 
+
+/* =======================
+   START TEST
+======================= */
 window.startTest = function(testId){
-
   localStorage.setItem("testId", testId);
-
   window.location.href = "test.html";
 };
 
-window.goResults = function(){
 
+/* =======================
+   GO RESULTS
+======================= */
+window.goResults = function(){
   window.location.href = "results.html";
 };
 
+
+/* =======================
+   LOGOUT
+======================= */
 window.logout = async function(){
-
   await signOut(auth);
-
   alert("Logged out successfully");
-
   window.location.href = "index.html";
 };
 
