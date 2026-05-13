@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test</title>
+</head>
+<body>
+
+<h2>Test Page</h2>
+
+<div id="questions"></div>
+
+<button onclick="submitTest()">Submit</button>
+
+<script type="module">
+import { db, auth } from './firebase-config.js';
+import {
+  doc,
+  getDoc,
+  addDoc,
+  collection
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+let testData;
+let answers = {};
+
+async function loadTest() {
+  let testId = localStorage.getItem("testId");
+
+  const docRef = doc(db, "tests", testId);
+  const docSnap = await getDoc(docRef);
+
+  testData = docSnap.data();
+
+  let html = "";
+
+  testData.questions.forEach((q, index) => {
+    html += `
+      <div>
+        <p>${index + 1}. ${q.question}</p>
+
+        ${q.options.map((opt, i) => `
+          <label>
+            <input type="radio" name="q${index}" value="${opt}"
+              onchange="saveAnswer(${index}, '${opt}')">
+            ${opt}
+          </label><br>
+        `).join("")}
+      </div>
+      <hr>
+    `;
+  });
+
+  document.getElementById("questions").innerHTML = html;
+}
+
+window.saveAnswer = function(qIndex, value){
+  answers[qIndex] = value;
+};
+
+window.submitTest = async function(){
+  let correct = 0;
+
+  testData.questions.forEach((q, i) => {
+    if (answers[i] === q.answer) correct++;
+  });
+
+  let result = {
+    testId: localStorage.getItem("testId"),
+    score: correct,
+    total: testData.questions.length,
+    answers: answers,
+    createdAt: new Date().toISOString()
+  };
+
+  await addDoc(collection(db, "results"), result);
+
+  alert("Test Submitted! Score: " + correct);
+  window.location.href = "dashboard.html";
+};
+
+loadTest();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body>
+
+<h2>Student Dashboard</h2>
+
+<button onclick="loadTest()">Load Monthly Test</button>
+
+<div id="testBox"></div>
+
+<script type="module">
+import { db, auth } from './firebase-config.js';
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+window.loadTest = async function () {
+  const querySnapshot = await getDocs(collection(db, "tests"));
+
+  let html = "<h3>Available Tests</h3>";
+
+  querySnapshot.forEach((doc) => {
+    let t = doc.data();
+
+    html += `
+      <div>
+        <h4>${t.title}</h4>
+        <button onclick="startTest('${doc.id}')">Start</button>
+      </div>
+      <hr>
+    `;
+  });
+
+  document.getElementById("testBox").innerHTML = html;
+};
+
+window.startTest = function(testId){
+  localStorage.setItem("testId", testId);
+  window.location.href = "test.html";
+};
+</script>
+
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel</title>
+</head>
+<body>
+
+<h2>Admin - Create Test</h2>
+
+<input id="title" placeholder="Test Title"><br><br>
+
+<textarea id="jsonInput" rows="10" cols="50"
+placeholder='[
+  {
+    "question": "2+2?",
+    "options": ["1","2","3","4"],
+    "answer": "4"
+  }
+]'></textarea><br><br>
+
+<button onclick="createTest()">Create Test</button>
+
+<p id="msg"></p>
+
+<script type="module">
+import { db, auth } from './firebase-config.js';
+import {
+  addDoc,
+  collection
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// SAFETY: simple admin check (basic level)
+auth.onAuthStateChanged((user) => {
+  if (!user) {
+    alert("Login required!");
+    window.location.href = "login.html";
+  }
+});
+
+window.createTest = async function () {
+
+  try {
+    let title = document.getElementById("title").value.trim();
+    let jsonText = document.getElementById("jsonInput").value.trim();
+
+    if (!title) {
+      throw new Error("Title is required");
+    }
+
+    if (!jsonText) {
+      throw new Error("Questions are required");
+    }
+
+    let questions = JSON.parse(jsonText);
+
+    if (!Array.isArray(questions)) {
+      throw new Error("Questions must be an array");
+    }
+
+    // basic validation of structure
+    questions.forEach(q => {
+      if (!q.question || !q.options || !q.answer) {
+        throw new Error("Each question must have question, options, answer");
+      }
+    });
+
+    await addDoc(collection(db, "tests"), {
+      title,
+      questions,
+      createdAt: new Date().toISOString()
+    });
+
+    document.getElementById("msg").innerText = "Test Created Successfully!";
+
+  } catch (e) {
+    document.getElementById("msg").innerText = "Error: " + e.message;
+  }
+};
+
+</script>
+
+</body>
+</html>
