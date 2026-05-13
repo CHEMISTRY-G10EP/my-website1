@@ -3,83 +3,370 @@
 <head>
   <title>Test Page</title>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
 
+    *{
+      box-sizing:border-box;
+    }
+
     body{
-      font-family:Arial;
-      background:#f4f4f4;
+
+      margin:0;
+
+      font-family:Arial, sans-serif;
+
+      background:#eef2f7;
+    }
+
+    .topbar{
+
+      background:white;
+
+      padding:15px 20px;
+
+      display:flex;
+
+      justify-content:space-between;
+
+      align-items:center;
+
+      flex-wrap:wrap;
+
+      box-shadow:0 2px 10px rgba(0,0,0,0.08);
+
+      position:sticky;
+
+      top:0;
+
+      z-index:100;
+    }
+
+    .topbar h2{
+
+      margin:0;
+      color:#333;
+    }
+
+    .student-info{
+
+      font-size:14px;
+      color:#555;
+    }
+
+    .timer{
+
+      background:#dc3545;
+
+      color:white;
+
+      padding:10px 18px;
+
+      border-radius:10px;
+
+      font-size:18px;
+
+      font-weight:bold;
+    }
+
+    .container{
+
+      max-width:1000px;
+
+      margin:auto;
+
       padding:20px;
     }
 
-    .question-box{
+    .progress-box{
+
       background:white;
+
       padding:15px;
+
+      border-radius:12px;
+
       margin-bottom:20px;
-      border-radius:8px;
-      box-shadow:0 0 5px rgba(0,0,0,0.1);
+
+      box-shadow:0 0 8px rgba(0,0,0,0.08);
     }
 
-    h2{
-      margin-bottom:20px;
+    .progress{
+
+      height:20px;
+
+      background:#ddd;
+
+      border-radius:20px;
+
+      overflow:hidden;
+
+      margin-top:10px;
     }
 
-    label{
+    .progress-bar{
+
+      height:100%;
+
+      width:0%;
+
+      background:#28a745;
+
+      transition:0.3s;
+    }
+
+    .question-box{
+
+      background:white;
+
+      padding:20px;
+
+      border-radius:15px;
+
+      margin-bottom:20px;
+
+      box-shadow:0 0 10px rgba(0,0,0,0.08);
+    }
+
+    .question-box h3{
+
+      margin-top:0;
+
+      color:#333;
+    }
+
+    .option{
+
       display:block;
-      margin:8px 0;
+
+      padding:12px;
+
+      margin:10px 0;
+
+      border:2px solid #ddd;
+
+      border-radius:10px;
+
+      cursor:pointer;
+
+      transition:0.3s;
+
+      background:#fafafa;
     }
 
-    button{
-      padding:12px 20px;
+    .option:hover{
+
+      border-color:#007bff;
+
+      background:#f0f7ff;
+    }
+
+    input[type="radio"]{
+
+      margin-right:10px;
+    }
+
+    .bottom-bar{
+
+      text-align:center;
+
+      margin:30px 0;
+    }
+
+    .submit-btn{
+
+      background:#007bff;
+
+      color:white;
+
+      border:none;
+
+      padding:15px 30px;
+
+      font-size:18px;
+
+      border-radius:10px;
+
       cursor:pointer;
-      font-size:16px;
+
+      transition:0.3s;
+
+      font-weight:bold;
+    }
+
+    .submit-btn:hover{
+
+      background:#0056b3;
+
+      transform:scale(1.03);
     }
 
   </style>
 </head>
 <body>
 
-<h2 id="testTitle">Loading Test...</h2>
+<div class="topbar">
 
-<div id="questions"></div>
+  <div>
 
-<button onclick="submitTest()">
-  Submit Test
-</button>
+    <h2 id="testTitle">
+      Loading Test...
+    </h2>
+
+    <div
+      class="student-info"
+      id="studentInfo"
+    >
+      Loading student...
+    </div>
+
+  </div>
+
+  <div class="timer" id="timer">
+
+    30:00
+
+  </div>
+
+</div>
+
+<div class="container">
+
+  <div class="progress-box">
+
+    <b>
+      Attempt Progress
+    </b>
+
+    <div class="progress">
+
+      <div
+        class="progress-bar"
+        id="progressBar"
+      ></div>
+
+    </div>
+
+    <p id="progressText">
+
+      0 Answered
+
+    </p>
+
+  </div>
+
+  <div id="questions"></div>
+
+  <div class="bottom-bar">
+
+    <button
+      class="submit-btn"
+      onclick="submitTest()"
+    >
+      Submit Test
+    </button>
+
+  </div>
+
+</div>
 
 <script type="module">
 
-import { db, auth } from './firebase-config.js';
+import { db, auth }
+from './firebase-config.js';
 
 import {
+
   doc,
   getDoc,
   addDoc,
   collection
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+} from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import {
+
   onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+} from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 let testData;
 
 let answers = {};
 
-onAuthStateChanged(auth, (user)=>{
+let timeLeft = 1800;
 
-  if(!user){
+let timerInterval;
 
-    alert("Login required");
+let studentName = "Unknown";
 
-    window.location.href = "index.html";
+let studentClass = "Unknown";
 
-    return;
+onAuthStateChanged(
+
+  auth,
+
+  async(user)=>{
+
+    if(!user){
+
+      alert("Login required");
+
+      window.location.href =
+        "index.html";
+
+      return;
+    }
+
+    document.getElementById(
+      "studentInfo"
+    ).innerText = user.email;
+
+    loadTest();
+
+    startTimer();
   }
+);
 
-  loadTest();
-});
+function startTimer(){
 
-async function loadTest() {
+  timerInterval = setInterval(()=>{
+
+    let minutes =
+      Math.floor(timeLeft / 60);
+
+    let seconds =
+      timeLeft % 60;
+
+    document.getElementById(
+      "timer"
+    ).innerText =
+
+      `${String(minutes)
+      .padStart(2,'0')}:${
+      String(seconds)
+      .padStart(2,'0')}`;
+
+    timeLeft--;
+
+    if(timeLeft < 0){
+
+      clearInterval(timerInterval);
+
+      alert(
+        "Time is over! Test submitted automatically."
+      );
+
+      submitTest();
+    }
+
+  }, 1000);
+}
+
+async function loadTest(){
 
   let testId =
     localStorage.getItem("testId");
@@ -88,7 +375,8 @@ async function loadTest() {
 
     alert("No test selected");
 
-    window.location.href = "dashboard.html";
+    window.location.href =
+      "dashboard.html";
 
     return;
   }
@@ -108,116 +396,180 @@ async function loadTest() {
 
   testData = docSnap.data();
 
-  document.getElementById("testTitle").innerText =
-    testData.title;
+  document.getElementById(
+    "testTitle"
+  ).innerText = testData.title;
 
   let html = "";
 
-  testData.questions.forEach((q, index) => {
+  testData.questions.forEach(
 
-    html += `
-      <div class="question-box">
+    (q, index)=>{
 
-        <h3>
-          ${index + 1}. ${q.question}
-        </h3>
+      html += `
 
-        ${
-          q.options.map((opt) => `
+        <div class="question-box">
 
-            <label>
+          <h3>
+
+            ${index + 1}.
+            ${q.question}
+
+          </h3>
+
+          ${q.options.map((opt)=>`
+
+            <label class="option">
 
               <input
                 type="radio"
                 name="q${index}"
                 value="${opt}"
-                onchange="saveAnswer(${index}, '${opt}')"
+                onchange="saveAnswer(
+                  ${index},
+                  '${opt}'
+                )"
               >
 
               ${opt}
 
             </label>
 
-          `).join("")
-        }
+          `).join("")}
 
-      </div>
-    `;
-  });
+        </div>
+      `;
+    }
+  );
 
-  document.getElementById("questions").innerHTML = html;
+  document.getElementById(
+    "questions"
+  ).innerHTML = html;
 }
 
-window.saveAnswer = function(qIndex, value){
+window.saveAnswer =
+function(qIndex, value){
 
   answers[qIndex] = value;
+
+  updateProgress();
 };
 
-window.submitTest = async function(){
+function updateProgress(){
+
+  let total =
+    testData.questions.length;
+
+  let answered =
+    Object.keys(answers).length;
+
+  let percent =
+    (answered / total) * 100;
+
+  document.getElementById(
+    "progressBar"
+  ).style.width =
+
+    percent + "%";
+
+  document.getElementById(
+    "progressText"
+  ).innerText =
+
+    `${answered} of ${total}
+    Questions Answered`;
+}
+
+window.submitTest =
+async function(){
+
+  let confirmSubmit =
+    confirm(
+      "Are you sure you want to submit?"
+    );
+
+  if(!confirmSubmit) return;
+
+  clearInterval(timerInterval);
 
   let correct = 0;
 
   let review = [];
 
-  testData.questions.forEach((q, i) => {
+  testData.questions.forEach(
 
-    let studentAnswer =
-      answers[i] || "Not Answered";
+    (q, i)=>{
 
-    if(studentAnswer === q.answer){
+      let studentAnswer =
+        answers[i] ||
+        "Not Answered";
 
-      correct++;
+      if(studentAnswer === q.answer){
+
+        correct++;
+      }
+
+      review.push({
+
+        question:q.question,
+
+        studentAnswer,
+
+        correctAnswer:q.answer,
+
+        solution:
+          q.solution ||
+          "No solution provided"
+      });
     }
-
-    review.push({
-
-      question: q.question,
-
-      studentAnswer: studentAnswer,
-
-      correctAnswer: q.answer,
-
-      solution:
-        q.solution || "No solution provided"
-
-    });
-  });
+  );
 
   let result = {
 
     testId:
-      localStorage.getItem("testId"),
+      localStorage.getItem(
+        "testId"
+      ),
 
     testTitle:
       testData.title,
 
-    score: correct,
+    score:correct,
 
     total:
       testData.questions.length,
 
-    answers: answers,
-
-    review: review,
+    review:review,
 
     createdAt:
-      new Date().toISOString(),
+      new Date().toLocaleString(),
 
     userEmail:
-      auth.currentUser?.email || "Unknown"
+      auth.currentUser?.email,
+
+    studentName:
+      studentName,
+
+    studentClass:
+      studentClass
   };
 
   await addDoc(
+
     collection(db, "results"),
+
     result
   );
 
   localStorage.setItem(
+
     "latestResult",
+
     JSON.stringify(result)
   );
 
-  window.location.href = "result.html";
+  window.location.href =
+    "result.html";
 };
 
 </script>
