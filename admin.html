@@ -4,38 +4,124 @@
   <title>Admin Panel</title>
 
   <style>
+
     body{
       font-family:Arial;
-      padding:20px;
-      background:#f4f4f4;
+      padding:30px;
+      background:#eef2f7;
+      margin:0;
     }
 
-    input, textarea{
+    .container{
+      max-width:900px;
+      margin:auto;
+      background:white;
+      padding:30px;
+      border-radius:15px;
+      box-shadow:0 0 15px rgba(0,0,0,0.1);
+    }
+
+    h2{
+      text-align:center;
+      color:#333;
+      margin-bottom:25px;
+    }
+
+    input, textarea, select{
+
       width:100%;
-      max-width:800px;
-      padding:10px;
-      margin-bottom:15px;
+      padding:12px;
+      margin-bottom:18px;
+      border:1px solid #ccc;
+      border-radius:8px;
+      font-size:15px;
+      box-sizing:border-box;
     }
 
-    button{
-      padding:10px 20px;
+    textarea{
+      resize:vertical;
+    }
+
+    .btn{
+
+      border:none;
+      padding:12px 20px;
+      border-radius:8px;
       cursor:pointer;
+      font-size:16px;
+      font-weight:bold;
+      transition:0.3s;
+      margin-right:10px;
+    }
+
+    .create-btn{
+      background:#28a745;
+      color:white;
+    }
+
+    .create-btn:hover{
+      background:#218838;
+      transform:scale(1.03);
+    }
+
+    .dashboard-btn{
+      background:#007bff;
+      color:white;
+    }
+
+    .dashboard-btn:hover{
+      background:#0056b3;
+      transform:scale(1.03);
     }
 
     #msg{
-      margin-top:15px;
+      margin-top:20px;
       font-weight:bold;
-      color:green;
+      text-align:center;
+      font-size:16px;
     }
+
+    .note{
+      background:#fff3cd;
+      padding:15px;
+      border-radius:8px;
+      margin-bottom:20px;
+      color:#856404;
+    }
+
   </style>
 </head>
 <body>
 
-<h2>Admin - Create Test</h2>
+<div class="container">
 
-<input id="title" placeholder="Test Title">
+  <h2>Admin - Create Test</h2>
 
-<textarea id="jsonInput" rows="18"
+  <div class="note">
+    Create class-wise tests for students.
+  </div>
+
+  <select id="className">
+
+    <option value="">Select Class</option>
+
+    <option value="10">Class 10</option>
+    <option value="11">Class 11</option>
+    <option value="12">Class 12</option>
+    <option value="IIT-JEE">IIT-JEE</option>
+    <option value="NEET">NEET</option>
+
+  </select>
+
+  <input
+    id="title"
+    placeholder="Enter Test Title"
+  >
+
+  <textarea
+    id="jsonInput"
+    rows="18"
+
 placeholder='[
   {
     "question": "What is the chemical formula of water?",
@@ -45,9 +131,23 @@ placeholder='[
   }
 ]'></textarea>
 
-<button onclick="createTest()">Create Test</button>
+  <button
+    class="btn create-btn"
+    onclick="createTest()"
+  >
+    Create Test
+  </button>
 
-<p id="msg"></p>
+  <button
+    class="btn dashboard-btn"
+    onclick="goDashboard()"
+  >
+    Dashboard
+  </button>
+
+  <p id="msg"></p>
+
+</div>
 
 <script type="module">
 
@@ -58,10 +158,12 @@ import {
   collection
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-auth.onAuthStateChanged((user) => {
+auth.onAuthStateChanged((user)=>{
 
-  if (!user) {
+  if(!user){
+
     alert("Login required!");
+
     window.location.href = "index.html";
   }
 });
@@ -70,9 +172,18 @@ window.createTest = async function () {
 
   try {
 
-    let title = document.getElementById("title").value.trim();
+    let className =
+      document.getElementById("className").value;
 
-    let jsonText = document.getElementById("jsonInput").value.trim();
+    let title =
+      document.getElementById("title").value.trim();
+
+    let jsonText =
+      document.getElementById("jsonInput").value.trim();
+
+    if (!className) {
+      throw new Error("Please select class");
+    }
 
     if (!title) {
       throw new Error("Title is required");
@@ -91,44 +202,68 @@ window.createTest = async function () {
     questions.forEach((q, index) => {
 
       if (!q.question) {
-        throw new Error(`Question missing at index ${index}`);
+        throw new Error(
+          `Question missing at index ${index}`
+        );
       }
 
-      if (!q.options || !Array.isArray(q.options)) {
-        throw new Error(`Options missing at question ${index + 1}`);
+      if (!q.options ||
+          !Array.isArray(q.options)) {
+
+        throw new Error(
+          `Options missing at question ${index + 1}`
+        );
       }
 
       if (!q.answer) {
-        throw new Error(`Answer missing at question ${index + 1}`);
+
+        throw new Error(
+          `Answer missing at question ${index + 1}`
+        );
       }
 
       if (!q.solution) {
-        q.solution = "No solution provided";
+
+        q.solution =
+          "No solution provided";
       }
     });
 
     await addDoc(collection(db, "tests"), {
 
+      className,
       title,
       questions,
       createdAt: new Date().toISOString()
 
     });
 
+    document.getElementById("msg").style.color =
+      "green";
+
     document.getElementById("msg").innerText =
       "Test Created Successfully!";
 
     document.getElementById("title").value = "";
+
     document.getElementById("jsonInput").value = "";
+
+    document.getElementById("className").value = "";
 
   }
   catch (e) {
 
-    document.getElementById("msg").style.color = "red";
+    document.getElementById("msg").style.color =
+      "red";
 
     document.getElementById("msg").innerText =
       "Error: " + e.message;
   }
+};
+
+window.goDashboard = function(){
+
+  window.location.href = "dashboard.html";
 };
 
 </script>
