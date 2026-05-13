@@ -2,45 +2,76 @@
 <html>
 <head>
   <title>Admin Panel</title>
+
+  <style>
+    body{
+      font-family:Arial;
+      padding:20px;
+      background:#f4f4f4;
+    }
+
+    input, textarea{
+      width:100%;
+      max-width:800px;
+      padding:10px;
+      margin-bottom:15px;
+    }
+
+    button{
+      padding:10px 20px;
+      cursor:pointer;
+    }
+
+    #msg{
+      margin-top:15px;
+      font-weight:bold;
+      color:green;
+    }
+  </style>
 </head>
 <body>
 
 <h2>Admin - Create Test</h2>
 
-<input id="title" placeholder="Test Title"><br><br>
+<input id="title" placeholder="Test Title">
 
-<textarea id="jsonInput" rows="10" cols="50"
+<textarea id="jsonInput" rows="18"
 placeholder='[
   {
-    "question": "2+2?",
-    "options": ["1","2","3","4"],
-    "answer": "4"
+    "question": "What is the chemical formula of water?",
+    "options": ["H2O","CO2","O2","NaCl"],
+    "answer": "H2O",
+    "solution": "Water is made of Hydrogen and Oxygen. Formula is H2O."
   }
-]'></textarea><br><br>
+]'></textarea>
 
 <button onclick="createTest()">Create Test</button>
 
 <p id="msg"></p>
 
 <script type="module">
+
 import { db, auth } from './firebase-config.js';
+
 import {
   addDoc,
   collection
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// SAFETY: simple admin check (basic level)
 auth.onAuthStateChanged((user) => {
+
   if (!user) {
     alert("Login required!");
-    window.location.href = "login.html";
+    window.location.href = "index.html";
   }
 });
 
 window.createTest = async function () {
 
   try {
+
     let title = document.getElementById("title").value.trim();
+
     let jsonText = document.getElementById("jsonInput").value.trim();
 
     if (!title) {
@@ -57,23 +88,46 @@ window.createTest = async function () {
       throw new Error("Questions must be an array");
     }
 
-    // basic validation of structure
-    questions.forEach(q => {
-      if (!q.question || !q.options || !q.answer) {
-        throw new Error("Each question must have question, options, answer");
+    questions.forEach((q, index) => {
+
+      if (!q.question) {
+        throw new Error(`Question missing at index ${index}`);
+      }
+
+      if (!q.options || !Array.isArray(q.options)) {
+        throw new Error(`Options missing at question ${index + 1}`);
+      }
+
+      if (!q.answer) {
+        throw new Error(`Answer missing at question ${index + 1}`);
+      }
+
+      if (!q.solution) {
+        q.solution = "No solution provided";
       }
     });
 
     await addDoc(collection(db, "tests"), {
+
       title,
       questions,
       createdAt: new Date().toISOString()
+
     });
 
-    document.getElementById("msg").innerText = "Test Created Successfully!";
+    document.getElementById("msg").innerText =
+      "Test Created Successfully!";
 
-  } catch (e) {
-    document.getElementById("msg").innerText = "Error: " + e.message;
+    document.getElementById("title").value = "";
+    document.getElementById("jsonInput").value = "";
+
+  }
+  catch (e) {
+
+    document.getElementById("msg").style.color = "red";
+
+    document.getElementById("msg").innerText =
+      "Error: " + e.message;
   }
 };
 
