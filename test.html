@@ -6,570 +6,234 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
+    * { box-sizing: border-box; }
 
-    *{
-      box-sizing:border-box;
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #eef2f7;
     }
 
-    body{
-
-      margin:0;
-
-      font-family:Arial, sans-serif;
-
-      background:#eef2f7;
+    .topbar {
+      background: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
     }
 
-    .topbar{
-
-      background:white;
-
-      padding:15px 20px;
-
-      display:flex;
-
-      justify-content:space-between;
-
-      align-items:center;
-
-      flex-wrap:wrap;
-
-      box-shadow:0 2px 10px rgba(0,0,0,0.08);
-
-      position:sticky;
-
-      top:0;
-
-      z-index:100;
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      padding: 20px;
     }
 
-    .topbar h2{
-
-      margin:0;
-      color:#333;
+    .question-box {
+      background: white;
+      padding: 20px;
+      margin-bottom: 15px;
+      border-radius: 12px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.08);
     }
 
-    .student-info{
-
-      font-size:14px;
-      color:#555;
+    .option {
+      display: block;
+      padding: 10px;
+      margin: 8px 0;
+      background: #f8f8f8;
+      border-radius: 8px;
+      cursor: pointer;
     }
 
-    .timer{
-
-      background:#dc3545;
-
-      color:white;
-
-      padding:10px 18px;
-
-      border-radius:10px;
-
-      font-size:18px;
-
-      font-weight:bold;
+    button {
+      padding: 12px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
     }
 
-    .container{
-
-      max-width:1000px;
-
-      margin:auto;
-
-      padding:20px;
+    button:hover {
+      background: #0056b3;
     }
-
-    .progress-box{
-
-      background:white;
-
-      padding:15px;
-
-      border-radius:12px;
-
-      margin-bottom:20px;
-
-      box-shadow:0 0 8px rgba(0,0,0,0.08);
-    }
-
-    .progress{
-
-      height:20px;
-
-      background:#ddd;
-
-      border-radius:20px;
-
-      overflow:hidden;
-
-      margin-top:10px;
-    }
-
-    .progress-bar{
-
-      height:100%;
-
-      width:0%;
-
-      background:#28a745;
-
-      transition:0.3s;
-    }
-
-    .question-box{
-
-      background:white;
-
-      padding:20px;
-
-      border-radius:15px;
-
-      margin-bottom:20px;
-
-      box-shadow:0 0 10px rgba(0,0,0,0.08);
-    }
-
-    .question-box h3{
-
-      margin-top:0;
-
-      color:#333;
-    }
-
-    .option{
-
-      display:block;
-
-      padding:12px;
-
-      margin:10px 0;
-
-      border:2px solid #ddd;
-
-      border-radius:10px;
-
-      cursor:pointer;
-
-      transition:0.3s;
-
-      background:#fafafa;
-    }
-
-    .option:hover{
-
-      border-color:#007bff;
-
-      background:#f0f7ff;
-    }
-
-    input[type="radio"]{
-
-      margin-right:10px;
-    }
-
-    .bottom-bar{
-
-      text-align:center;
-
-      margin:30px 0;
-    }
-
-    .submit-btn{
-
-      background:#007bff;
-
-      color:white;
-
-      border:none;
-
-      padding:15px 30px;
-
-      font-size:18px;
-
-      border-radius:10px;
-
-      cursor:pointer;
-
-      transition:0.3s;
-
-      font-weight:bold;
-    }
-
-    .submit-btn:hover{
-
-      background:#0056b3;
-
-      transform:scale(1.03);
-    }
-
   </style>
 </head>
+
 <body>
 
 <div class="topbar">
-
-  <div>
-
-    <h2 id="testTitle">
-      Loading Test...
-    </h2>
-
-    <div
-      class="student-info"
-      id="studentInfo"
-    >
-      Loading student...
-    </div>
-
-  </div>
-
-  <div class="timer" id="timer">
-
-    30:00
-
-  </div>
-
+  <h2 id="testTitle">Loading...</h2>
+  <div id="studentInfo">Loading student...</div>
 </div>
 
 <div class="container">
-
-  <div class="progress-box">
-
-    <b>
-      Attempt Progress
-    </b>
-
-    <div class="progress">
-
-      <div
-        class="progress-bar"
-        id="progressBar"
-      ></div>
-
-    </div>
-
-    <p id="progressText">
-
-      0 Answered
-
-    </p>
-
-  </div>
-
   <div id="questions"></div>
 
-  <div class="bottom-bar">
-
-    <button
-      class="submit-btn"
-      onclick="submitTest()"
-    >
-      Submit Test
-    </button>
-
-  </div>
-
+  <button onclick="submitTest()">Submit Test</button>
 </div>
 
 <script type="module">
 
-import { db, auth }
-from './firebase-config.js';
+import { db, auth } from './firebase-config.js';
 
 import {
-
   doc,
   getDoc,
   addDoc,
-  collection
+  collection,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-} from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-import {
-
-  onAuthStateChanged
-
-} from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 let testData;
-
 let answers = {};
 
-let timeLeft = 1800;
-
-let timerInterval;
-
 let studentName = "Unknown";
-
 let studentClass = "Unknown";
 
-onAuthStateChanged(
+/* =========================
+   LOGIN + LOAD STUDENT
+========================= */
+onAuthStateChanged(auth, async (user) => {
 
-  auth,
-
-  async(user)=>{
-
-    if(!user){
-
-      alert("Login required");
-
-      window.location.href =
-        "index.html";
-
-      return;
-    }
-
-    document.getElementById(
-      "studentInfo"
-    ).innerText = user.email;
-
-    loadTest();
-
-    startTimer();
-  }
-);
-
-function startTimer(){
-
-  timerInterval = setInterval(()=>{
-
-    let minutes =
-      Math.floor(timeLeft / 60);
-
-    let seconds =
-      timeLeft % 60;
-
-    document.getElementById(
-      "timer"
-    ).innerText =
-
-      `${String(minutes)
-      .padStart(2,'0')}:${
-      String(seconds)
-      .padStart(2,'0')}`;
-
-    timeLeft--;
-
-    if(timeLeft < 0){
-
-      clearInterval(timerInterval);
-
-      alert(
-        "Time is over! Test submitted automatically."
-      );
-
-      submitTest();
-    }
-
-  }, 1000);
-}
-
-async function loadTest(){
-
-  let testId =
-    localStorage.getItem("testId");
-
-  if(!testId){
-
-    alert("No test selected");
-
-    window.location.href =
-      "dashboard.html";
-
+  if (!user) {
+    window.location.href = "index.html";
     return;
   }
 
-  const docRef =
-    doc(db, "tests", testId);
+  document.getElementById("studentInfo").innerText = user.email;
 
-  const docSnap =
-    await getDoc(docRef);
+  // 🔥 GET STUDENT FROM FIRESTORE
+  const q = query(
+    collection(db, "students"),
+    where("Email", "==", user.email)
+  );
 
-  if(!docSnap.exists()){
+  const snap = await getDocs(q);
 
+  if (!snap.empty) {
+    const data = snap.docs[0].data();
+    studentName = data.name;
+    studentClass = data.class;
+
+    document.getElementById("studentInfo").innerText =
+      `${studentName} | Class ${studentClass}`;
+  }
+
+  loadTest();
+});
+
+
+/* =========================
+   LOAD TEST
+========================= */
+async function loadTest() {
+
+  let testId = localStorage.getItem("testId");
+
+  if (!testId) {
+    alert("No test selected");
+    window.location.href = "dashboard.html";
+    return;
+  }
+
+  const docRef = doc(db, "tests", testId);
+  const docSnap = await getDoc(docRef);
+
+  if (!docSnap.exists()) {
     alert("Test not found");
-
     return;
   }
 
   testData = docSnap.data();
 
-  document.getElementById(
-    "testTitle"
-  ).innerText = testData.title;
+  document.getElementById("testTitle").innerText = testData.title;
 
   let html = "";
 
-  testData.questions.forEach(
+  testData.questions.forEach((q, i) => {
 
-    (q, index)=>{
+    html += `
+      <div class="question-box">
 
-      html += `
+        <h3>${i + 1}. ${q.question}</h3>
 
-        <div class="question-box">
+        ${q.options.map(opt => `
+          <label class="option">
+            <input type="radio"
+              name="q${i}"
+              value="${opt}"
+              onchange="saveAnswer(${i}, '${opt}')"
+            >
+            ${opt}
+          </label>
+        `).join("")}
 
-          <h3>
+      </div>
+    `;
+  });
 
-            ${index + 1}.
-            ${q.question}
-
-          </h3>
-
-          ${q.options.map((opt)=>`
-
-            <label class="option">
-
-              <input
-                type="radio"
-                name="q${index}"
-                value="${opt}"
-                onchange="saveAnswer(
-                  ${index},
-                  '${opt}'
-                )"
-              >
-
-              ${opt}
-
-            </label>
-
-          `).join("")}
-
-        </div>
-      `;
-    }
-  );
-
-  document.getElementById(
-    "questions"
-  ).innerHTML = html;
+  document.getElementById("questions").innerHTML = html;
 }
 
-window.saveAnswer =
-function(qIndex, value){
 
-  answers[qIndex] = value;
-
-  updateProgress();
+/* =========================
+   SAVE ANSWER
+========================= */
+window.saveAnswer = function(i, value) {
+  answers[i] = value;
 };
 
-function updateProgress(){
 
-  let total =
-    testData.questions.length;
-
-  let answered =
-    Object.keys(answers).length;
-
-  let percent =
-    (answered / total) * 100;
-
-  document.getElementById(
-    "progressBar"
-  ).style.width =
-
-    percent + "%";
-
-  document.getElementById(
-    "progressText"
-  ).innerText =
-
-    `${answered} of ${total}
-    Questions Answered`;
-}
-
-window.submitTest =
-async function(){
-
-  let confirmSubmit =
-    confirm(
-      "Are you sure you want to submit?"
-    );
-
-  if(!confirmSubmit) return;
-
-  clearInterval(timerInterval);
+/* =========================
+   SUBMIT TEST
+========================= */
+window.submitTest = async function() {
 
   let correct = 0;
-
   let review = [];
 
-  testData.questions.forEach(
+  testData.questions.forEach((q, i) => {
 
-    (q, i)=>{
+    let studentAnswer = answers[i] || "Not Answered";
 
-      let studentAnswer =
-        answers[i] ||
-        "Not Answered";
+    if (studentAnswer === q.answer) correct++;
 
-      if(studentAnswer === q.answer){
-
-        correct++;
-      }
-
-      review.push({
-
-        question:q.question,
-
-        studentAnswer,
-
-        correctAnswer:q.answer,
-
-        solution:
-          q.solution ||
-          "No solution provided"
-      });
-    }
-  );
+    review.push({
+      question: q.question,
+      studentAnswer,
+      correctAnswer: q.answer,
+      solution: q.solution || "No solution"
+    });
+  });
 
   let result = {
+    testId: localStorage.getItem("testId"),
+    testTitle: testData.title,
+    score: correct,
+    total: testData.questions.length,
+    review,
+    createdAt: new Date().toLocaleString(),
 
-    testId:
-      localStorage.getItem(
-        "testId"
-      ),
-
-    testTitle:
-      testData.title,
-
-    score:correct,
-
-    total:
-      testData.questions.length,
-
-    review:review,
-
-    createdAt:
-      new Date().toLocaleString(),
-
-    userEmail:
-      auth.currentUser?.email,
-
-    studentName:
-      studentName,
-
-    studentClass:
-      studentClass
+    // ✅ FIXED
+    studentName,
+    studentClass,
+    userEmail: auth.currentUser.email
   };
 
-  await addDoc(
+  await addDoc(collection(db, "results"), result);
 
-    collection(db, "results"),
+  localStorage.setItem("latestResult", JSON.stringify(result));
 
-    result
-  );
-
-  localStorage.setItem(
-
-    "latestResult",
-
-    JSON.stringify(result)
-  );
-
-  window.location.href =
-    "result.html";
+  window.location.href = "result.html";
 };
 
 </script>
