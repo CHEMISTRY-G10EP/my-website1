@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Results</title>
+</head>
+<body>
+
+<h2>Student Results</h2>
+
+<div id="results"></div>
+
+<script type="module">
+import { db } from './firebase-config.js';
+
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+async function loadResults() {
+
+  const querySnapshot = await getDocs(collection(db, "results"));
+
+  let html = "";
+
+  querySnapshot.forEach((doc) => {
+
+    let r = doc.data();
+
+    html += `
+      <div style="border:1px solid #ccc;padding:10px;margin:10px;">
+        <h3>Test ID: ${r.testId}</h3>
+        <p>Score: ${r.score} / ${r.total}</p>
+        <p>Date: ${r.createdAt}</p>
+      </div>
+    `;
+  });
+
+  document.getElementById("results").innerHTML = html;
+}
+
+loadResults();
+</script>
+
+</body>
+</html>
