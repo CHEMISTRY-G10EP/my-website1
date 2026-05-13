@@ -108,9 +108,9 @@ import {
 
 let studentData = null;
 
-/* =======================
+/* =========================
    LOAD STUDENT PROFILE
-======================= */
+========================= */
 onAuthStateChanged(auth, async (user) => {
 
   if (!user) {
@@ -118,16 +118,18 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  console.log("LOGIN EMAIL:", user.email);
+
   const q = query(
     collection(db, "students"),
-    where("email", "==", user.email)
+    where("Email", "==", user.email)   // IMPORTANT FIX
   );
 
   const snapshot = await getDocs(q);
 
   if (snapshot.empty) {
     document.getElementById("userInfo").innerHTML =
-      "Student profile not found";
+      "❌ Student profile not found";
     return;
   }
 
@@ -136,18 +138,18 @@ onAuthStateChanged(auth, async (user) => {
   document.getElementById("userInfo").innerHTML = `
     <b>Name:</b> ${studentData.name}<br>
     <b>Class:</b> ${studentData.class}<br>
-    <b>Email:</b> ${studentData.email}
+    <b>Email:</b> ${studentData.Email}
   `;
 });
 
 
-/* =======================
-   LOAD TESTS (FIXED)
-======================= */
+/* =========================
+   LOAD TESTS (CLASS WISE)
+========================= */
 window.loadTest = async function () {
 
   if (!studentData) {
-    alert("Please wait, loading student data...");
+    alert("Student data not loaded yet. Please wait...");
     return;
   }
 
@@ -160,7 +162,6 @@ window.loadTest = async function () {
 
     const t = docSnap.data();
 
-    // IMPORTANT FIX: convert both to string
     if (String(t.className) !== String(studentData.class)) return;
 
     found = true;
@@ -184,26 +185,26 @@ window.loadTest = async function () {
 };
 
 
-/* =======================
+/* =========================
    START TEST
-======================= */
+========================= */
 window.startTest = function(testId){
   localStorage.setItem("testId", testId);
   window.location.href = "test.html";
 };
 
 
-/* =======================
+/* =========================
    RESULTS PAGE
-======================= */
+========================= */
 window.goResults = function(){
   window.location.href = "results.html";
 };
 
 
-/* =======================
+/* =========================
    LOGOUT
-======================= */
+========================= */
 window.logout = async function(){
   await signOut(auth);
   window.location.href = "index.html";
