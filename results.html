@@ -1,45 +1,171 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Results</title>
+  <title>My Results</title>
+
+  <style>
+
+    body{
+      font-family:Arial;
+      background:#f4f4f4;
+      padding:20px;
+    }
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:20px;
+    }
+
+    .result-card{
+      background:white;
+      padding:20px;
+      margin-bottom:20px;
+      border-radius:10px;
+      box-shadow:0 0 5px rgba(0,0,0,0.1);
+    }
+
+    .question-box{
+      border:1px solid #ddd;
+      padding:10px;
+      margin-top:10px;
+      border-radius:5px;
+      background:#fafafa;
+    }
+
+    button{
+      padding:10px 15px;
+      cursor:pointer;
+    }
+
+    summary{
+      cursor:pointer;
+      font-weight:bold;
+      margin-top:10px;
+    }
+
+  </style>
 </head>
 <body>
 
-<h2>Student Results</h2>
+<div class="topbar">
+
+  <h2>My Previous Results</h2>
+
+  <button onclick="goDashboard()">
+    Back to Dashboard
+  </button>
+
+</div>
 
 <div id="results"></div>
 
 <script type="module">
-import { db } from './firebase-config.js';
+
+import { db, auth } from './firebase-config.js';
 
 import {
   collection,
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-async function loadResults() {
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-  const querySnapshot = await getDocs(collection(db, "results"));
+onAuthStateChanged(auth, async(user)=>{
+
+  if(!user){
+
+    alert("Login required");
+
+    window.location.href = "index.html";
+
+    return;
+  }
+
+  const querySnapshot =
+    await getDocs(collection(db, "results"));
 
   let html = "";
 
-  querySnapshot.forEach((doc) => {
+  querySnapshot.forEach((doc)=>{
 
     let r = doc.data();
 
+    if(r.userEmail !== user.email) return;
+
     html += `
-      <div style="border:1px solid #ccc;padding:10px;margin:10px;">
-        <h3>Test ID: ${r.testId}</h3>
-        <p>Score: ${r.score} / ${r.total}</p>
-        <p>Date: ${r.createdAt}</p>
+
+      <div class="result-card">
+
+        <h3>${r.testTitle || "Test"}</h3>
+
+        <p>
+          <b>Score:</b>
+          ${r.score} / ${r.total}
+        </p>
+
+        <p>
+          <b>Date:</b>
+          ${r.createdAt}
+        </p>
+
+        <details>
+
+          <summary>
+            View Questions & Solutions
+          </summary>
+
+          ${
+            (r.review || []).map((q, index)=>`
+
+              <div class="question-box">
+
+                <h4>
+                  Q${index + 1}. ${q.question}
+                </h4>
+
+                <p>
+                  <b>Your Answer:</b>
+                  ${q.studentAnswer}
+                </p>
+
+                <p>
+                  <b>Correct Answer:</b>
+                  ${q.correctAnswer}
+                </p>
+
+                <p>
+                  <b>Solution:</b>
+                  ${q.solution}
+                </p>
+
+              </div>
+
+            `).join("")
+          }
+
+        </details>
+
       </div>
     `;
   });
 
-  document.getElementById("results").innerHTML = html;
-}
+  if(html === ""){
 
-loadResults();
+    html = "<p>No previous results found.</p>";
+  }
+
+  document.getElementById("results").innerHTML = html;
+});
+
+window.goDashboard = function(){
+
+  window.location.href = "dashboard.html";
+};
+
 </script>
 
 </body>
