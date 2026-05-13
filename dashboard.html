@@ -4,57 +4,173 @@
   <title>Student Dashboard</title>
 
   <style>
+
     body{
       font-family:Arial;
+      background:#eef2f7;
       padding:20px;
-      background:#f4f4f4;
+      margin:0;
+    }
+
+    .container{
+      max-width:1000px;
+      margin:auto;
     }
 
     .topbar{
+
+      background:white;
+      padding:20px;
+      border-radius:15px;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);
+
       display:flex;
       justify-content:space-between;
       align-items:center;
-      margin-bottom:20px;
+      flex-wrap:wrap;
+
+      margin-bottom:25px;
     }
 
-    button{
-      padding:10px 15px;
+    .student-info h2{
+      margin:0;
+      color:#333;
+    }
+
+    .student-info p{
+      margin:5px 0;
+      color:#666;
+    }
+
+    .btn{
+
+      border:none;
+      padding:12px 18px;
+      border-radius:8px;
       cursor:pointer;
+      font-size:15px;
+      font-weight:bold;
       margin:5px;
+      transition:0.3s;
+    }
+
+    .load-btn{
+      background:#007bff;
+      color:white;
+    }
+
+    .load-btn:hover{
+      background:#0056b3;
+      transform:scale(1.03);
+    }
+
+    .result-btn{
+      background:#28a745;
+      color:white;
+    }
+
+    .result-btn:hover{
+      background:#1e7e34;
+      transform:scale(1.03);
+    }
+
+    .logout-btn{
+      background:#dc3545;
+      color:white;
+    }
+
+    .logout-btn:hover{
+      background:#b52a37;
+      transform:scale(1.03);
     }
 
     .test-card{
+
       background:white;
-      padding:15px;
-      margin-bottom:15px;
-      border-radius:8px;
-      box-shadow:0 0 5px rgba(0,0,0,0.1);
+      padding:20px;
+      margin-bottom:20px;
+      border-radius:12px;
+      box-shadow:0 0 8px rgba(0,0,0,0.08);
     }
 
-    h2,h3,h4{
-      margin:5px 0;
+    .test-card h3{
+      margin-top:0;
+      color:#333;
     }
+
+    .class-badge{
+
+      display:inline-block;
+      background:#17a2b8;
+      color:white;
+      padding:5px 10px;
+      border-radius:20px;
+      font-size:13px;
+      margin-bottom:10px;
+    }
+
+    .start-btn{
+      background:#6f42c1;
+      color:white;
+    }
+
+    .start-btn:hover{
+      background:#59359c;
+      transform:scale(1.03);
+    }
+
+    #testBox{
+      margin-top:20px;
+    }
+
   </style>
 </head>
 <body>
 
-<div class="topbar">
+<div class="container">
 
-  <div>
-    <h2>Student Dashboard</h2>
-    <p id="userEmail"></p>
+  <div class="topbar">
+
+    <div class="student-info">
+
+      <h2>Student Dashboard</h2>
+
+      <p id="userInfo">
+        Loading student info...
+      </p>
+
+    </div>
+
+    <div>
+
+      <button
+        class="btn result-btn"
+        onclick="goResults()"
+      >
+        Previous Results
+      </button>
+
+      <button
+        class="btn logout-btn"
+        onclick="logout()"
+      >
+        Logout
+      </button>
+
+    </div>
+
   </div>
 
-  <div>
-    <button onclick="goResults()">Previous Results</button>
-    <button onclick="logout()">Logout</button>
-  </div>
+  <button
+    class="btn load-btn"
+    onclick="loadTest()"
+  >
+    Load Monthly Test
+  </button>
+
+  <div id="testBox"></div>
 
 </div>
-
-<button onclick="loadTest()">Load Monthly Test</button>
-
-<div id="testBox"></div>
 
 <script type="module">
 
@@ -69,38 +185,105 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-auth.onAuthStateChanged((user)=>{
+let studentData = null;
+
+auth.onAuthStateChanged(async(user)=>{
 
   if(!user){
+
     alert("Login required");
+
     window.location.href = "index.html";
+
     return;
   }
 
-  document.getElementById("userEmail").innerText =
-    "Logged in as: " + user.email;
+  const studentSnapshot =
+    await getDocs(collection(db, "students"));
+
+  studentSnapshot.forEach((doc)=>{
+
+    let s = doc.data();
+
+    if(s.email === user.email){
+
+      studentData = s;
+    }
+  });
+
+  if(!studentData){
+
+    document.getElementById("userInfo")
+      .innerHTML =
+      "Student profile not found";
+
+    return;
+  }
+
+  localStorage.setItem(
+    "studentName",
+    studentData.name
+  );
+
+  localStorage.setItem(
+    "studentClass",
+    studentData.class
+  );
+
+  document.getElementById("userInfo")
+    .innerHTML = `
+
+      <b>Name:</b> ${studentData.name}<br>
+
+      <b>Class:</b> ${studentData.class}<br>
+
+      <b>Email:</b> ${studentData.email}
+    `;
 });
 
 window.loadTest = async function () {
 
-  const querySnapshot = await getDocs(collection(db, "tests"));
+  if(!studentData){
 
-  let html = "<h3>Available Tests</h3>";
+    alert("Student data not loaded");
 
-  if(querySnapshot.empty){
-    html += "<p>No tests available.</p>";
+    return;
   }
 
-  querySnapshot.forEach((doc) => {
+  const querySnapshot =
+    await getDocs(collection(db, "tests"));
+
+  let html = "<h2>Available Tests</h2>";
+
+  let found = false;
+
+  querySnapshot.forEach((doc)=>{
 
     let t = doc.data();
 
+    if(t.className !== studentData.class){
+
+      return;
+    }
+
+    found = true;
+
     html += `
+
       <div class="test-card">
 
-        <h4>${t.title}</h4>
+        <div class="class-badge">
 
-        <button onclick="startTest('${doc.id}')">
+          ${t.className}
+
+        </div>
+
+        <h3>${t.title}</h3>
+
+        <button
+          class="btn start-btn"
+          onclick="startTest('${doc.id}')"
+        >
           Start Test
         </button>
 
@@ -108,7 +291,17 @@ window.loadTest = async function () {
     `;
   });
 
-  document.getElementById("testBox").innerHTML = html;
+  if(!found){
+
+    html += `
+      <p>
+        No tests available for your class.
+      </p>
+    `;
+  }
+
+  document.getElementById("testBox")
+    .innerHTML = html;
 };
 
 window.startTest = function(testId){
