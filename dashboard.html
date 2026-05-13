@@ -24,18 +24,7 @@
       display:flex;
       justify-content:space-between;
       align-items:center;
-      flex-wrap:wrap;
       margin-bottom:25px;
-    }
-
-    .student-info h2{
-      margin:0;
-      color:#333;
-    }
-
-    .student-info p{
-      margin:5px 0;
-      color:#666;
     }
 
     .btn{
@@ -43,46 +32,18 @@
       padding:12px 18px;
       border-radius:8px;
       cursor:pointer;
-      font-size:15px;
       font-weight:bold;
       margin:5px;
-      transition:0.3s;
     }
 
-    .load-btn{
-      background:#007bff;
-      color:white;
-    }
-
-    .load-btn:hover{
-      background:#0056b3;
-      transform:scale(1.03);
-    }
-
-    .result-btn{
-      background:#28a745;
-      color:white;
-    }
-
-    .result-btn:hover{
-      background:#1e7e34;
-      transform:scale(1.03);
-    }
-
-    .logout-btn{
-      background:#dc3545;
-      color:white;
-    }
-
-    .logout-btn:hover{
-      background:#b52a37;
-      transform:scale(1.03);
-    }
+    .load-btn{ background:#007bff; color:white; }
+    .result-btn{ background:#28a745; color:white; }
+    .logout-btn{ background:#dc3545; color:white; }
 
     .test-card{
       background:white;
       padding:20px;
-      margin-bottom:20px;
+      margin-bottom:15px;
       border-radius:12px;
       box-shadow:0 0 8px rgba(0,0,0,0.08);
     }
@@ -94,25 +55,15 @@
       padding:5px 10px;
       border-radius:20px;
       font-size:13px;
-      margin-bottom:10px;
     }
 
     .start-btn{
       background:#6f42c1;
       color:white;
-      border:none;
       padding:10px 15px;
+      border:none;
       border-radius:8px;
       cursor:pointer;
-    }
-
-    .start-btn:hover{
-      background:#59359c;
-      transform:scale(1.03);
-    }
-
-    #testBox{
-      margin-top:20px;
     }
   </style>
 </head>
@@ -122,27 +73,18 @@
 <div class="container">
 
   <div class="topbar">
-
-    <div class="student-info">
+    <div>
       <h2>Student Dashboard</h2>
       <p id="userInfo">Loading student info...</p>
     </div>
 
     <div>
-      <button class="btn result-btn" onclick="goResults()">
-        Previous Results
-      </button>
-
-      <button class="btn logout-btn" onclick="logout()">
-        Logout
-      </button>
+      <button class="btn result-btn" onclick="goResults()">Previous Results</button>
+      <button class="btn logout-btn" onclick="logout()">Logout</button>
     </div>
-
   </div>
 
-  <button class="btn load-btn" onclick="loadTest()">
-    Load Monthly Test
-  </button>
+  <button class="btn load-btn" onclick="loadTest()">Load Monthly Test</button>
 
   <div id="testBox"></div>
 
@@ -160,7 +102,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import {
-  signOut
+  signOut,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 let studentData = null;
@@ -168,10 +111,9 @@ let studentData = null;
 /* =======================
    LOAD STUDENT PROFILE
 ======================= */
-auth.onAuthStateChanged(async(user)=>{
+onAuthStateChanged(auth, async (user) => {
 
-  if(!user){
-    alert("Login required");
+  if (!user) {
     window.location.href = "index.html";
     return;
   }
@@ -183,7 +125,7 @@ auth.onAuthStateChanged(async(user)=>{
 
   const snapshot = await getDocs(q);
 
-  if(snapshot.empty){
+  if (snapshot.empty) {
     document.getElementById("userInfo").innerHTML =
       "Student profile not found";
     return;
@@ -200,48 +142,42 @@ auth.onAuthStateChanged(async(user)=>{
 
 
 /* =======================
-   LOAD CLASS TESTS
+   LOAD TESTS (FIXED)
 ======================= */
 window.loadTest = async function () {
 
-  if(!studentData){
-    alert("Student data not loaded yet");
+  if (!studentData) {
+    alert("Please wait, loading student data...");
     return;
   }
 
-  const querySnapshot = await getDocs(collection(db, "tests"));
+  const snapshot = await getDocs(collection(db, "tests"));
 
-  let html = "<h2>Available Tests</h2>";
+  let html = "<h3>Available Tests</h3>";
   let found = false;
 
-  querySnapshot.forEach((doc)=>{
+  snapshot.forEach((docSnap) => {
 
-    let t = doc.data();
+    const t = docSnap.data();
 
-    // SAFE CLASS CHECK
-    if(String(t.className) !== String(studentData.class)) return;
+    // IMPORTANT FIX: convert both to string
+    if (String(t.className) !== String(studentData.class)) return;
 
     found = true;
 
     html += `
       <div class="test-card">
-
-        <div class="class-badge">
-          Class ${t.className}
-        </div>
-
+        <div class="class-badge">Class ${t.className}</div>
         <h3>${t.title}</h3>
-
-        <button class="start-btn" onclick="startTest('${doc.id}')">
+        <button class="start-btn" onclick="startTest('${docSnap.id}')">
           Start Test
         </button>
-
       </div>
     `;
   });
 
-  if(!found){
-    html += `<p>No tests available for your class.</p>`;
+  if (!found) {
+    html = "<p>No tests available for your class.</p>";
   }
 
   document.getElementById("testBox").innerHTML = html;
@@ -258,7 +194,7 @@ window.startTest = function(testId){
 
 
 /* =======================
-   GO RESULTS
+   RESULTS PAGE
 ======================= */
 window.goResults = function(){
   window.location.href = "results.html";
@@ -270,7 +206,6 @@ window.goResults = function(){
 ======================= */
 window.logout = async function(){
   await signOut(auth);
-  alert("Logged out successfully");
   window.location.href = "index.html";
 };
 
