@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Result</title>
+
+  <style>
+
+    body{
+      font-family:Arial;
+      background:#f4f4f4;
+      padding:20px;
+    }
+
+    .result-box{
+      background:white;
+      padding:20px;
+      border-radius:10px;
+      box-shadow:0 0 5px rgba(0,0,0,0.1);
+      margin-bottom:20px;
+    }
+
+    .question-box{
+      background:white;
+      padding:15px;
+      margin-top:15px;
+      border-radius:8px;
+      box-shadow:0 0 5px rgba(0,0,0,0.1);
+    }
+
+    h1,h2,h3{
+      margin:5px 0;
+    }
+
+    button{
+      padding:10px 15px;
+      margin-top:15px;
+      cursor:pointer;
+    }
+
+    .correct{
+      color:green;
+      font-weight:bold;
+    }
+
+    .wrong{
+      color:red;
+      font-weight:bold;
+    }
+
+  </style>
+</head>
+<body>
+
+<h1>Test Result</h1>
+
+<div id="summary"></div>
+
+<div id="review"></div>
+
+<button onclick="goDashboard()">
+  Back to Dashboard
+</button>
+
+<button onclick="goResults()">
+  View Previous Results
+</button>
+
+<script>
+
+let result =
+  JSON.parse(localStorage.getItem("latestResult"));
+
+if(!result){
+
+  document.body.innerHTML =
+    "<h2>No result found</h2>";
+}
+else{
+
+  document.getElementById("summary").innerHTML = `
+
+    <div class="result-box">
+
+      <h2>${result.testTitle}</h2>
+
+      <h3>
+        Score:
+        ${result.score} / ${result.total}
+      </h3>
+
+      <p>
+        Submitted on:
+        ${result.createdAt}
+      </p>
+
+    </div>
+  `;
+
+  let html = "";
+
+  result.review.forEach((r, index)=>{
+
+    let isCorrect =
+      r.studentAnswer === r.correctAnswer;
+
+    html += `
+
+      <div class="question-box">
+
+        <h3>
+          Q${index + 1}. ${r.question}
+        </h3>
+
+        <p class="${
+          isCorrect ? 'correct' : 'wrong'
+        }">
+
+          Your Answer:
+          ${r.studentAnswer}
+
+        </p>
+
+        <p>
+
+          <b>Correct Answer:</b>
+          ${r.correctAnswer}
+
+        </p>
+
+        <p>
+
+          <b>Solution:</b>
+          ${r.solution}
+
+        </p>
+
+      </div>
+    `;
+  });
+
+  document.getElementById("review").innerHTML =
+    html;
+}
+
+function goDashboard(){
+
+  window.location.href =
+    "dashboard.html";
+}
+
+function goResults(){
+
+  window.location.href =
+    "results.html";
+}
+
+</script>
+
+</body>
+</html>
