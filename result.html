@@ -3,72 +3,265 @@
 <head>
   <title>Test Result</title>
 
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <style>
 
+    *{
+      box-sizing:border-box;
+    }
+
     body{
-      font-family:Arial;
-      background:#f4f4f4;
+
+      font-family:Arial, sans-serif;
+
+      background:#eef2f7;
+
+      margin:0;
+
       padding:20px;
     }
 
-    .result-box{
+    .container{
+
+      max-width:1000px;
+
+      margin:auto;
+    }
+
+    .header{
+
+      text-align:center;
+
+      margin-bottom:25px;
+    }
+
+    .header h1{
+
+      color:#333;
+      margin-bottom:5px;
+    }
+
+    .summary-card{
+
       background:white;
-      padding:20px;
+
+      padding:25px;
+
+      border-radius:15px;
+
+      box-shadow:0 0 10px rgba(0,0,0,0.08);
+
+      margin-bottom:25px;
+    }
+
+    .summary-grid{
+
+      display:grid;
+
+      grid-template-columns:
+      repeat(auto-fit, minmax(200px,1fr));
+
+      gap:15px;
+
+      margin-top:20px;
+    }
+
+    .mini-card{
+
+      padding:15px;
+
       border-radius:10px;
-      box-shadow:0 0 5px rgba(0,0,0,0.1);
-      margin-bottom:20px;
+
+      color:white;
+
+      text-align:center;
+
+      font-weight:bold;
+    }
+
+    .score-card{
+      background:#007bff;
+    }
+
+    .correct-card{
+      background:#28a745;
+    }
+
+    .wrong-card{
+      background:#dc3545;
+    }
+
+    .percent-card{
+      background:#6f42c1;
     }
 
     .question-box{
+
       background:white;
-      padding:15px;
-      margin-top:15px;
-      border-radius:8px;
-      box-shadow:0 0 5px rgba(0,0,0,0.1);
+
+      padding:20px;
+
+      margin-bottom:20px;
+
+      border-radius:12px;
+
+      box-shadow:0 0 8px rgba(0,0,0,0.08);
     }
 
-    h1,h2,h3{
-      margin:5px 0;
-    }
+    .question-box h3{
 
-    button{
-      padding:10px 15px;
-      margin-top:15px;
-      cursor:pointer;
+      margin-top:0;
+      color:#333;
     }
 
     .correct{
-      color:green;
+
+      color:#28a745;
       font-weight:bold;
     }
 
     .wrong{
-      color:red;
+
+      color:#dc3545;
       font-weight:bold;
+    }
+
+    .solution{
+
+      background:#f8f9fa;
+
+      padding:12px;
+
+      border-radius:8px;
+
+      margin-top:10px;
+    }
+
+    .btn-area{
+
+      text-align:center;
+
+      margin-top:30px;
+    }
+
+    .btn{
+
+      border:none;
+
+      padding:12px 20px;
+
+      margin:10px;
+
+      border-radius:8px;
+
+      font-size:15px;
+
+      font-weight:bold;
+
+      cursor:pointer;
+
+      transition:0.3s;
+
+      color:white;
+    }
+
+    .dashboard-btn{
+      background:#007bff;
+    }
+
+    .dashboard-btn:hover{
+      background:#0056b3;
+      transform:scale(1.03);
+    }
+
+    .results-btn{
+      background:#28a745;
+    }
+
+    .results-btn:hover{
+      background:#1e7e34;
+      transform:scale(1.03);
+    }
+
+    .badge{
+
+      display:inline-block;
+
+      padding:8px 15px;
+
+      border-radius:20px;
+
+      color:white;
+
+      font-weight:bold;
+
+      margin-top:10px;
+    }
+
+    .excellent{
+      background:#28a745;
+    }
+
+    .good{
+      background:#17a2b8;
+    }
+
+    .average{
+      background:#ffc107;
+      color:black;
+    }
+
+    .poor{
+      background:#dc3545;
     }
 
   </style>
 </head>
 <body>
 
-<h1>Test Result</h1>
+<div class="container">
 
-<div id="summary"></div>
+  <div class="header">
 
-<div id="review"></div>
+    <h1>Test Result</h1>
 
-<button onclick="goDashboard()">
-  Back to Dashboard
-</button>
+    <p>
+      Review your performance
+    </p>
 
-<button onclick="goResults()">
-  View Previous Results
-</button>
+  </div>
+
+  <div id="summary"></div>
+
+  <div id="review"></div>
+
+  <div class="btn-area">
+
+    <button
+      class="btn dashboard-btn"
+      onclick="goDashboard()"
+    >
+      Back to Dashboard
+    </button>
+
+    <button
+      class="btn results-btn"
+      onclick="goResults()"
+    >
+      Previous Results
+    </button>
+
+  </div>
+
+</div>
 
 <script>
 
 let result =
-  JSON.parse(localStorage.getItem("latestResult"));
+  JSON.parse(
+    localStorage.getItem("latestResult")
+  );
 
 if(!result){
 
@@ -77,21 +270,101 @@ if(!result){
 }
 else{
 
-  document.getElementById("summary").innerHTML = `
+  let percentage = Math.round(
+    (result.score / result.total) * 100
+  );
 
-    <div class="result-box">
+  let wrong =
+    result.total - result.score;
+
+  let performanceClass = "poor";
+
+  let performanceText = "Needs Improvement";
+
+  if(percentage >= 80){
+
+    performanceClass = "excellent";
+
+    performanceText = "Excellent";
+  }
+  else if(percentage >= 60){
+
+    performanceClass = "good";
+
+    performanceText = "Good";
+  }
+  else if(percentage >= 40){
+
+    performanceClass = "average";
+
+    performanceText = "Average";
+  }
+
+  document.getElementById("summary")
+    .innerHTML = `
+
+    <div class="summary-card">
 
       <h2>${result.testTitle}</h2>
 
-      <h3>
-        Score:
-        ${result.score} / ${result.total}
-      </h3>
+      <p>
+
+        <b>Student:</b>
+        ${result.studentName || "Unknown"}
+
+      </p>
 
       <p>
-        Submitted on:
-        ${result.createdAt}
+
+        <b>Class:</b>
+        ${result.studentClass || "Unknown"}
+
       </p>
+
+      <p>
+
+        <b>Submitted On:</b>
+        ${result.createdAt}
+
+      </p>
+
+      <div class="badge ${performanceClass}">
+
+        ${performanceText}
+
+      </div>
+
+      <div class="summary-grid">
+
+        <div class="mini-card score-card">
+
+          Score<br>
+          ${result.score}/${result.total}
+
+        </div>
+
+        <div class="mini-card correct-card">
+
+          Correct<br>
+          ${result.score}
+
+        </div>
+
+        <div class="mini-card wrong-card">
+
+          Wrong<br>
+          ${wrong}
+
+        </div>
+
+        <div class="mini-card percent-card">
+
+          Percentage<br>
+          ${percentage}%
+
+        </div>
+
+      </div>
 
     </div>
   `;
@@ -108,7 +381,10 @@ else{
       <div class="question-box">
 
         <h3>
-          Q${index + 1}. ${r.question}
+
+          Q${index + 1}.
+          ${r.question}
+
         </h3>
 
         <p class="${
@@ -127,19 +403,20 @@ else{
 
         </p>
 
-        <p>
+        <div class="solution">
 
-          <b>Solution:</b>
+          <b>Solution:</b><br>
+
           ${r.solution}
 
-        </p>
+        </div>
 
       </div>
     `;
   });
 
-  document.getElementById("review").innerHTML =
-    html;
+  document.getElementById("review")
+    .innerHTML = html;
 }
 
 function goDashboard(){
