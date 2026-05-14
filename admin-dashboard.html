@@ -5,10 +5,10 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- CHART JS -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- JSPDF -->
+  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
@@ -16,8 +16,8 @@
     body{
       font-family:Arial;
       margin:0;
-      background:#eef2f7;
       padding:20px;
+      background:#eef2f7;
     }
 
     .container{
@@ -27,40 +27,35 @@
 
     h1{
       text-align:center;
+      margin-bottom:20px;
     }
 
     .grid{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
       gap:15px;
+      margin-bottom:20px;
     }
 
     .card{
       background:white;
       padding:20px;
       border-radius:12px;
-      box-shadow:0 0 10px rgba(0,0,0,0.1);
       text-align:center;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);
     }
 
     canvas{
       max-width:100%;
     }
 
-    .btn{
-      padding:10px 15px;
-      border:none;
-      border-radius:8px;
-      background:#007bff;
-      color:white;
-      cursor:pointer;
-      font-weight:bold;
-    }
-
     table{
       width:100%;
       border-collapse:collapse;
       margin-top:15px;
+      background:white;
+      border-radius:10px;
+      overflow:hidden;
     }
 
     th,td{
@@ -72,6 +67,20 @@
     th{
       background:#007bff;
       color:white;
+    }
+
+    .btn{
+      background:#007bff;
+      color:white;
+      border:none;
+      padding:8px 12px;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:bold;
+    }
+
+    .btn:hover{
+      background:#0056b3;
     }
 
   </style>
@@ -87,12 +96,12 @@
   <div class="grid">
 
     <div class="card">
-      <h2 id="totalStudents">0</h2>
+      <h2 id="total">0</h2>
       <p>Total Results</p>
     </div>
 
     <div class="card">
-      <h2 id="avgScore">0</h2>
+      <h2 id="avg">0</h2>
       <p>Average Score</p>
     </div>
 
@@ -103,19 +112,15 @@
 
   </div>
 
-  <br>
-
   <!-- PIE CHART -->
   <div class="card">
     <h2>Pass / Fail Ratio</h2>
     <canvas id="pieChart"></canvas>
   </div>
 
-  <br>
-
-  <!-- STUDENT TABLE -->
+  <!-- TABLE -->
   <div class="card">
-    <h2>Student List</h2>
+    <h2>Student Results</h2>
 
     <table>
       <thead>
@@ -143,37 +148,36 @@ import {
   getDocs
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-let results = [];
+let pass = 0;
+let fail = 0;
+let total = 0;
+let sum = 0;
 
-/* ================= LOAD DATA ================= */
-async function load(){
+let topper = {score:0,name:""};
+
+async function loadData(){
 
   const snap = await getDocs(collection(db,"results"));
-
-  let total = 0;
-  let sum = 0;
-  let pass = 0;
-  let fail = 0;
-
-  let topper = {score:0,name:""};
 
   let tableHTML = "";
 
   snap.forEach(doc=>{
 
     let r = doc.data();
-    results.push(r);
 
     total++;
     sum += r.score;
 
-    let percent = (r.score/r.total)*100;
+    let percent = (r.score / r.total) * 100;
 
     if(percent >= 40) pass++;
     else fail++;
 
     if(r.score > topper.score){
-      topper = {score:r.score,name:r.studentName};
+      topper = {
+        score:r.score,
+        name:r.studentName
+      };
     }
 
     tableHTML += `
@@ -182,21 +186,21 @@ async function load(){
         <td>${r.studentClass}</td>
         <td>${r.score}/${r.total}</td>
         <td>
-          <button class="btn" onclick='downloadCert("${r.studentName}",${r.score},${r.total})'>
+          <button class="btn"
+            onclick="downloadCert('${r.studentName}',${r.score},${r.total})">
             Certificate
           </button>
         </td>
       </tr>
     `;
-
   });
 
   document.getElementById("table").innerHTML = tableHTML;
 
-  document.getElementById("totalStudents").innerText = total;
+  document.getElementById("total").innerText = total;
 
-  document.getElementById("avgScore").innerText =
-    (sum/total || 0).toFixed(2);
+  document.getElementById("avg").innerText =
+    total ? (sum / total).toFixed(2) : 0;
 
   document.getElementById("topper").innerText =
     topper.name;
@@ -204,7 +208,7 @@ async function load(){
   drawChart(pass,fail);
 }
 
-/* ================= PIE CHART ================= */
+/* PIE CHART */
 function drawChart(pass,fail){
 
   new Chart(document.getElementById("pieChart"),{
@@ -220,7 +224,7 @@ function drawChart(pass,fail){
 
 }
 
-/* ================= CERTIFICATE ================= */
+/* CERTIFICATE */
 window.downloadCert = function(name,score,total){
 
   const { jsPDF } = window.jspdf;
@@ -229,23 +233,22 @@ window.downloadCert = function(name,score,total){
   let percent = Math.round((score/total)*100);
 
   doc.setFontSize(20);
-  doc.text("CERTIFICATE OF ACHIEVEMENT",20,30);
+  doc.text("CERTIFICATE",20,30);
 
   doc.setFontSize(14);
-  doc.text(`This is to certify that`,20,50);
+  doc.text(`This certifies that`,20,50);
 
-  doc.setFontSize(16);
   doc.text(name,20,65);
 
-  doc.setFontSize(14);
-  doc.text(`has scored ${score}/${total} (${percent}%)`,20,80);
+  doc.text(`Scored ${score}/${total} (${percent}%)`,20,80);
 
   doc.text("Congratulations 🎉",20,100);
 
-  doc.save(name+"_certificate.pdf");
+  doc.save(name + "_certificate.pdf");
 };
 
-load();
+/* START */
+loadData();
 
 </script>
 
