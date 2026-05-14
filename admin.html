@@ -139,13 +139,14 @@
 
   <input id="title" placeholder="Test Title">
 
+  <!-- FIX: safe JSON input (MathJax supported) -->
   <textarea id="jsonInput" rows="10"
 placeholder='[
   {
-    "question": "What is H2O?",
-    "options": ["Water","Oxygen","Hydrogen","Salt"],
-    "answer": "Water",
-    "solution": "H2O is water"
+    "question": "What is Avogadro number?",
+    "options": ["6.022 \\times 10^{23}", "3.0 \\times 10^8", "9.8", "1.6 \\times 10^{-19}"],
+    "answer": "6.022 \\times 10^{23}",
+    "solution": "It is number of particles in 1 mole"
   }
 ]'></textarea>
 
@@ -182,13 +183,26 @@ window.checkPass = function(){
   }
 };
 
+/* ================= SAFE JSON PARSE FIX ================= */
+function safeJSON(text){
+  try {
+    // FIX: escape single backslash issues
+    text = text.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
+    return JSON.parse(text);
+  } catch(e){
+    throw new Error("Invalid JSON format (check MathJax \\ symbols)");
+  }
+}
+
 /* ================= CREATE TEST ================= */
 window.createTest = async function(){
 
   try{
     let className = document.getElementById("className").value;
     let title = document.getElementById("title").value;
-    let questions = JSON.parse(document.getElementById("jsonInput").value);
+
+    let jsonText = document.getElementById("jsonInput").value;
+    let questions = safeJSON(jsonText);
 
     await addDoc(collection(db,"tests"),{
       className,
@@ -206,7 +220,7 @@ window.createTest = async function(){
   }
 };
 
-/* ================= LOAD RESULTS (FULL DETAIL) ================= */
+/* ================= LOAD RESULTS (UNCHANGED LOGIC) ================= */
 window.loadResults = async function(){
 
   let box = document.getElementById("resultsBox");
