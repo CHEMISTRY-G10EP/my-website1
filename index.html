@@ -1,114 +1,165 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Advanced Result</title>
+  <title>Test Result</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
 
-    *{box-sizing:border-box;}
+    *{
+      box-sizing:border-box;
+    }
 
     body{
-      font-family:Arial;
-      margin:0;
+      font-family:Arial, sans-serif;
       background:#eef2f7;
+      margin:0;
       padding:20px;
     }
 
     .container{
-      max-width:1100px;
+      max-width:1000px;
       margin:auto;
     }
 
-    /* ================= TOP SUMMARY ================= */
-    .card{
-      background:white;
-      padding:20px;
-      border-radius:12px;
-      margin-bottom:15px;
-      box-shadow:0 0 10px rgba(0,0,0,0.1);
+    .header{
+      text-align:center;
+      margin-bottom:20px;
     }
 
-    /* ================= QUESTION ================= */
-    .q-box{
+    .header h1{
+      margin:0;
+    }
+
+    /* ================= SUMMARY ================= */
+    .summary-card{
+      background:white;
+      padding:25px;
+      border-radius:15px;
+      box-shadow:0 0 10px rgba(0,0,0,0.08);
+      margin-bottom:20px;
+    }
+
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:15px;
+      margin-top:20px;
+    }
+
+    .mini-card{
+      padding:15px;
+      border-radius:10px;
+      color:white;
+      text-align:center;
+      font-weight:bold;
+    }
+
+    .score-card{ background:#007bff; }
+    .correct-card{ background:#28a745; }
+    .wrong-card{ background:#dc3545; }
+    .percent-card{ background:#6f42c1; }
+
+    /* ================= BADGE ================= */
+    .badge{
+      display:inline-block;
+      padding:8px 15px;
+      border-radius:20px;
+      color:white;
+      font-weight:bold;
+      margin-top:10px;
+    }
+
+    .excellent{ background:#28a745; }
+    .good{ background:#17a2b8; }
+    .average{ background:#ffc107; color:black; }
+    .poor{ background:#dc3545; }
+
+    /* ================= QUESTION BOX ================= */
+    .question-box{
       background:white;
       padding:20px;
-      margin:15px 0;
+      margin-bottom:20px;
       border-radius:12px;
       box-shadow:0 0 8px rgba(0,0,0,0.08);
       scroll-margin-top:100px;
-      position:relative;
     }
 
-    .correct{color:green;font-weight:bold;}
-    .wrong{color:red;font-weight:bold;}
+    .correct{ color:#28a745; font-weight:bold; }
+    .wrong{ color:#dc3545; font-weight:bold; }
 
-    /* ================= FLOAT NAV ================= */
-    .nav{
-      position:fixed;
-      right:10px;
-      top:80px;
-      width:70px;
-      max-height:70vh;
-      overflow:auto;
+    .solution{
+      background:#f8f9fa;
+      padding:12px;
+      border-radius:8px;
+      margin-top:10px;
+    }
+
+    /* ================= QUESTION GRID ================= */
+    .q-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(45px,1fr));
+      gap:10px;
+      margin:20px 0;
+      padding:10px;
       background:white;
       border-radius:12px;
-      box-shadow:0 0 10px rgba(0,0,0,0.2);
-      padding:10px;
+      box-shadow:0 0 10px rgba(0,0,0,0.08);
     }
 
-    .nav-item{
-      width:40px;
-      height:40px;
-      margin:5px auto;
+    .q-box{
+      width:45px;
+      height:45px;
       display:flex;
       align-items:center;
       justify-content:center;
-      border-radius:8px;
+      border-radius:10px;
       font-weight:bold;
-      cursor:pointer;
       color:white;
-      transition:0.2s;
-    }
-
-    .nav-item:hover{
-      transform:scale(1.1);
-    }
-
-    .correct-b{background:#28a745;}
-    .wrong-b{background:#dc3545;}
-
-    .active{
-      outline:3px solid #000;
-    }
-
-    /* ================= BOOKMARK ================= */
-    .bookmark{
-      position:absolute;
-      top:10px;
-      right:10px;
       cursor:pointer;
-      font-size:20px;
+      transition:0.25s;
+      user-select:none;
     }
 
-    .bookmarked{
-      color:gold;
+    .q-correct{ background:#28a745; }
+    .q-wrong{ background:#dc3545; }
+
+    .q-box:hover{
+      transform:scale(1.15);
+      opacity:0.9;
     }
 
     /* ================= BUTTONS ================= */
-    .btn{
-      padding:10px 15px;
-      border:none;
-      border-radius:8px;
-      cursor:pointer;
-      font-weight:bold;
-      margin:5px;
-      color:white;
+    .btn-area{
+      text-align:center;
+      margin-top:30px;
     }
 
-    .blue{background:#007bff;}
-    .green{background:#28a745;}
+    .btn{
+      border:none;
+      padding:12px 22px;
+      margin:10px;
+      border-radius:10px;
+      font-size:15px;
+      font-weight:bold;
+      cursor:pointer;
+      color:white;
+      transition:0.3s;
+      box-shadow:0 4px 10px rgba(0,0,0,0.15);
+    }
+
+    .btn:hover{
+      transform:scale(1.05);
+    }
+
+    .dashboard-btn{
+      background:linear-gradient(135deg,#007bff,#0056b3);
+    }
+
+    .results-btn{
+      background:linear-gradient(135deg,#28a745,#1e7e34);
+    }
 
   </style>
 </head>
@@ -117,126 +168,165 @@
 
 <div class="container">
 
+  <div class="header">
+    <h1>Test Result</h1>
+    <p>Click question numbers to jump directly</p>
+  </div>
+
   <div id="summary"></div>
 
-  <h3>Question Analysis</h3>
-  <div id="questions"></div>
+  <h3 style="text-align:center;">Question Navigation</h3>
+  <div class="q-grid" id="qGrid"></div>
+
+  <div id="review"></div>
+
+  <div class="btn-area">
+
+    <button class="btn dashboard-btn" onclick="goDashboard()">
+      Back to Dashboard
+    </button>
+
+    <button class="btn results-btn" onclick="goResults()">
+      Previous Results
+    </button>
+
+  </div>
 
 </div>
-
-<!-- FLOAT NAV -->
-<div class="nav" id="nav"></div>
 
 <script>
 
 let result = JSON.parse(localStorage.getItem("latestResult"));
 
 if(!result){
-  document.body.innerHTML = "<h2>No Result Found</h2>";
-}
 
-/* ================= AI ANALYSIS ================= */
-function aiAnalysis(){
-  let p = (result.score/result.total)*100;
+  document.body.innerHTML = "<h2>No result found</h2>";
 
-  if(p >= 80) return "Excellent performance 🚀 Keep practicing to maintain rank.";
-  if(p >= 60) return "Good performance 👍 Improve accuracy for better score.";
-  if(p >= 40) return "Average performance ⚠ Focus on weak topics.";
-  return "Poor performance ❌ Need strong revision of basics.";
-}
+}else{
 
-/* ================= SUMMARY ================= */
-document.getElementById("summary").innerHTML = `
-  <div class="card">
-    <h2>${result.testTitle}</h2>
-    <p><b>Student:</b> ${result.studentName}</p>
-    <p><b>Score:</b> ${result.score}/${result.total}</p>
-    <p><b>AI Analysis:</b> ${aiAnalysis()}</p>
+  let percentage = Math.round((result.score / result.total) * 100);
+  let wrong = result.total - result.score;
 
-    <button class="btn blue" onclick="startTimer()">Start Review Timer</button>
-    <button class="btn green" onclick="stopTimer()">Stop Timer</button>
-    <p id="timeSpent">Time: 0 sec</p>
-  </div>
-`;
+  let performanceClass = "poor";
+  let performanceText = "Needs Improvement";
 
-let startTime;
-let timer;
+  if(percentage >= 80){
+    performanceClass = "excellent";
+    performanceText = "Excellent";
+  }
+  else if(percentage >= 60){
+    performanceClass = "good";
+    performanceText = "Good";
+  }
+  else if(percentage >= 40){
+    performanceClass = "average";
+    performanceText = "Average";
+  }
 
-/* ================= TIMER ================= */
-function startTimer(){
-  startTime = Date.now();
-  timer = setInterval(()=>{
-    let sec = Math.floor((Date.now()-startTime)/1000);
-    document.getElementById("timeSpent").innerText = "Time: "+sec+" sec";
-  },1000);
-}
+  // ================= SUMMARY =================
+  document.getElementById("summary").innerHTML = `
+    <div class="summary-card">
 
-function stopTimer(){
-  clearInterval(timer);
-}
+      <h2>${result.testTitle}</h2>
 
-/* ================= QUESTIONS ================= */
-let qHTML = "";
-let navHTML = "";
+      <p><b>Student:</b> ${result.studentName || "Unknown"}</p>
+      <p><b>Class:</b> ${result.studentClass || "Unknown"}</p>
+      <p><b>Submitted:</b> ${result.createdAt}</p>
 
-result.review.forEach((q,i)=>{
+      <div class="badge ${performanceClass}">
+        ${performanceText}
+      </div>
 
-  let correct = q.studentAnswer === q.correctAnswer;
+      <div class="summary-grid">
 
-  qHTML += `
-    <div class="q-box" id="q${i}">
-      <div class="bookmark" onclick="bookmark(${i}, this)">⭐</div>
+        <div class="mini-card score-card">
+          Score<br>${result.score}/${result.total}
+        </div>
 
-      <h3>Q${i+1}. ${q.question}</h3>
+        <div class="mini-card correct-card">
+          Correct<br>${result.score}
+        </div>
 
-      <p class="${correct?'correct':'wrong'}">
-        Your Answer: ${q.studentAnswer}
-      </p>
+        <div class="mini-card wrong-card">
+          Wrong<br>${wrong}
+        </div>
 
-      <p><b>Correct:</b> ${q.correctAnswer}</p>
+        <div class="mini-card percent-card">
+          Percentage<br>${percentage}%
+        </div>
+
+      </div>
+
     </div>
   `;
 
-  navHTML += `
-    <div class="nav-item ${correct?'correct-b':'wrong-b'}"
-         onclick="goto(${i})">
-      ${i+1}
-    </div>
-  `;
-});
+  // ================= QUESTION GRID =================
+  let gridHTML = "";
 
-document.getElementById("questions").innerHTML = qHTML;
-document.getElementById("nav").innerHTML = navHTML;
+  result.review.forEach((r, i) => {
 
-/* ================= NAVIGATION ================= */
-function goto(i){
-  document.getElementById("q"+i)
-  .scrollIntoView({behavior:"smooth", block:"center"});
-}
+    let isCorrect = r.studentAnswer === r.correctAnswer;
 
-/* ================= BOOKMARK ================= */
-function bookmark(i, el){
-  el.classList.toggle("bookmarked");
-}
-
-/* ================= HIGHLIGHT SCROLL ================= */
-window.addEventListener("scroll",()=>{
-
-  document.querySelectorAll(".q-box").forEach((box,i)=>{
-
-    let rect = box.getBoundingClientRect();
-
-    let nav = document.querySelectorAll(".nav-item")[i];
-
-    if(rect.top < 200 && rect.bottom > 200){
-      nav.classList.add("active");
-    }else{
-      nav.classList.remove("active");
-    }
-
+    gridHTML += `
+      <div class="q-box ${isCorrect ? 'q-correct' : 'q-wrong'}"
+           onclick="jumpToQuestion(${i})">
+        ${i + 1}
+      </div>
+    `;
   });
 
-});
+  document.getElementById("qGrid").innerHTML = gridHTML;
+
+  // ================= REVIEW =================
+  let html = "";
+
+  result.review.forEach((r, index)=>{
+
+    let isCorrect = r.studentAnswer === r.correctAnswer;
+
+    html += `
+      <div class="question-box" id="q-${index}">
+
+        <h3>Q${index + 1}. ${r.question}</h3>
+
+        <p class="${isCorrect ? 'correct' : 'wrong'}">
+          Your Answer: ${r.studentAnswer}
+        </p>
+
+        <p><b>Correct Answer:</b> ${r.correctAnswer}</p>
+
+        <div class="solution">
+          <b>Solution:</b><br>
+          ${r.solution}
+        </div>
+
+      </div>
+    `;
+  });
+
+  document.getElementById("review").innerHTML = html;
+}
+
+// ================= SCROLL FUNCTION =================
+function jumpToQuestion(index){
+
+  let el = document.getElementById("q-" + index);
+
+  if(el){
+    el.scrollIntoView({
+      behavior:"smooth",
+      block:"center"
+    });
+  }
+}
+
+function goDashboard(){
+  window.location.href = "dashboard.html";
+}
+
+function goResults(){
+  window.location.href = "results.html";
+}
 
 </script>
 
