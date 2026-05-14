@@ -2,9 +2,6 @@
 <html>
 <head>
   <title>Admin Panel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body{
@@ -13,6 +10,7 @@
       margin:0;
     }
 
+    /* LOGIN */
     #loginScreen{
       height:100vh;
       display:flex;
@@ -22,225 +20,254 @@
 
     .login-box{
       background:white;
-      padding:25px;
-      border-radius:12px;
+      padding:30px;
+      border-radius:15px;
       width:300px;
       text-align:center;
+      box-shadow:0 0 15px rgba(0,0,0,0.1);
     }
 
     .login-box input{
       width:100%;
-      padding:10px;
+      padding:12px;
       margin-top:10px;
+      border-radius:8px;
+      border:1px solid #ccc;
     }
 
     .login-box button{
-      margin-top:10px;
+      margin-top:15px;
+      padding:12px;
       width:100%;
-      padding:10px;
+      border:none;
+      border-radius:8px;
       background:#007bff;
       color:white;
-      border:none;
+      font-weight:bold;
       cursor:pointer;
     }
 
+    /* PANEL */
     .container{
-      display:none;
-      max-width:1100px;
+      max-width:900px;
       margin:auto;
       background:white;
-      padding:20px;
-      border-radius:12px;
-      margin-top:20px;
+      padding:30px;
+      border-radius:15px;
+      box-shadow:0 0 15px rgba(0,0,0,0.1);
+      display:none;
     }
 
-    input,select,textarea{
+    h2{
+      text-align:center;
+      color:#333;
+      margin-bottom:25px;
+    }
+
+    input, textarea, select{
       width:100%;
-      padding:10px;
-      margin:10px 0;
+      padding:12px;
+      margin-bottom:18px;
+      border:1px solid #ccc;
+      border-radius:8px;
+      font-size:15px;
     }
 
-    button{
-      padding:10px;
-      margin:5px;
+    textarea{resize:vertical;}
+
+    .btn{
       border:none;
+      padding:12px 20px;
+      border-radius:8px;
       cursor:pointer;
-      border-radius:6px;
+      font-size:16px;
+      font-weight:bold;
     }
 
-    .create{background:green;color:white;}
-    .load{background:blue;color:white;}
+    .create-btn{
+      background:#28a745;
+      color:white;
+    }
+
+    .dashboard-btn{
+      background:#007bff;
+      color:white;
+      margin-left:10px;
+    }
 
     .card{
-      background:#f9f9f9;
-      padding:10px;
+      background:#fff;
+      padding:15px;
       margin:10px 0;
-      border-radius:8px;
+      border-radius:10px;
+      box-shadow:0 0 5px rgba(0,0,0,0.1);
     }
 
-    .grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:20px;
-    }
-
-    canvas{
-      max-height:300px;
+    details summary{
+      cursor:pointer;
+      font-weight:bold;
+      margin-top:10px;
     }
   </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
+<!-- ================= LOGIN ================= -->
 <div id="loginScreen">
   <div class="login-box">
-    <h3>Admin Login</h3>
-    <input type="password" id="pass">
-    <button onclick="login()">Login</button>
-    <p id="err" style="color:red"></p>
+    <h2>Admin Login</h2>
+    <input type="password" id="pass" placeholder="Enter Password">
+    <button onclick="checkPass()">Login</button>
+    <p id="error" style="color:red;"></p>
   </div>
 </div>
 
-<!-- PANEL -->
+<!-- ================= ADMIN PANEL ================= -->
 <div class="container">
 
-  <h2>Admin Dashboard</h2>
+  <h2>Admin Panel</h2>
 
-  <select id="classFilter" onchange="loadResults()">
-    <option value="">All Classes</option>
+  <select id="className">
+    <option value="">Select Class</option>
     <option value="10">Class 10</option>
     <option value="11">Class 11</option>
     <option value="12">Class 12</option>
+    <option value="IIT-JEE">IIT-JEE</option>
+    <option value="NEET">NEET</option>
   </select>
 
-  <button class="load" onclick="loadResults()">Load Results</button>
+  <input id="title" placeholder="Test Title">
 
-  <div class="grid">
-    <canvas id="pie"></canvas>
-    <canvas id="bar"></canvas>
-  </div>
+  <textarea id="jsonInput" rows="10"
+placeholder='[
+  {
+    "question": "What is H2O?",
+    "options": ["Water","Oxygen","Hydrogen","Salt"],
+    "answer": "Water",
+    "solution": "H2O is water"
+  }
+]'></textarea>
 
-  <h3>Student Ranking</h3>
-  <div id="ranking"></div>
+  <button class="btn create-btn" onclick="createTest()">Create Test</button>
+  <button class="btn dashboard-btn" onclick="loadResults()">Load Results</button>
 
-  <h3>All Results</h3>
-  <div id="results"></div>
+  <p id="msg"></p>
+
+  <hr>
+
+  <h2>Student Results</h2>
+  <div id="resultsBox"></div>
 
 </div>
 
 <script type="module">
-import { db } from './firebase-config.js';
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-window.login = function(){
-  let p = document.getElementById("pass").value;
-  if(p === "7812"){
+import { db } from './firebase-config.js';
+import {
+  addDoc,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ================= LOGIN ================= */
+window.checkPass = function(){
+  let pass = document.getElementById("pass").value;
+
+  if(pass === "7812"){
     document.getElementById("loginScreen").style.display="none";
     document.querySelector(".container").style.display="block";
-    loadResults();
   } else {
-    document.getElementById("err").innerText="Wrong password";
+    document.getElementById("error").innerText="Wrong Password!";
   }
 };
 
+/* ================= CREATE TEST ================= */
+window.createTest = async function(){
+
+  try{
+    let className = document.getElementById("className").value;
+    let title = document.getElementById("title").value;
+    let questions = JSON.parse(document.getElementById("jsonInput").value);
+
+    await addDoc(collection(db,"tests"),{
+      className,
+      title,
+      questions,
+      createdAt:new Date().toISOString()
+    });
+
+    document.getElementById("msg").innerText="Test Created!";
+    document.getElementById("msg").style.color="green";
+
+  } catch(e){
+    document.getElementById("msg").innerText=e.message;
+    document.getElementById("msg").style.color="red";
+  }
+};
+
+/* ================= LOAD RESULTS (FULL DETAIL) ================= */
 window.loadResults = async function(){
 
-  let snap = await getDocs(collection(db,"results"));
+  let box = document.getElementById("resultsBox");
+  box.innerHTML="Loading...";
 
-  let results = [];
-  let classFilter = document.getElementById("classFilter").value;
+  const snap = await getDocs(collection(db,"results"));
 
-  snap.forEach(d=>{
-    let r = d.data();
+  box.innerHTML="";
 
-    if(classFilter && r.studentClass != classFilter) return;
+  snap.forEach(doc => {
 
-    results.push(r);
-  });
+    let r = doc.data();
 
-  if(results.length === 0){
-    document.getElementById("results").innerHTML="No data";
-    return;
-  }
+    let reviewHTML="";
 
-  // ---------- RANKING ----------
-  results.sort((a,b)=>b.score-a.score);
+    if(r.review){
 
-  let rankHTML="";
-  results.forEach((r,i)=>{
-    rankHTML+=`
+      r.review.forEach((q,i)=>{
+
+        let ok = q.studentAnswer === q.correctAnswer;
+
+        reviewHTML += `
+          <div style="
+            padding:10px;
+            margin-top:8px;
+            border-radius:8px;
+            background:${ok?'#e7f9ec':'#ffecec'};
+            border-left:5px solid ${ok?'green':'red'};
+          ">
+
+            <b>Q${i+1}:</b> ${q.question}<br>
+
+            <b>Your:</b> ${q.studentAnswer}<br>
+            <b>Correct:</b> ${q.correctAnswer}<br>
+            <small>${q.solution}</small>
+
+          </div>
+        `;
+      });
+    }
+
+    box.innerHTML += `
       <div class="card">
-        🥇 Rank ${i+1}<br>
-        ${r.studentName} (${r.studentClass})<br>
-        Score: ${r.score}/${r.total}
+
+        <b>Student:</b> ${r.studentName}<br>
+        <b>Class:</b> ${r.studentClass}<br>
+        <b>Email:</b> ${r.userEmail}<br>
+        <b>Test:</b> ${r.testTitle}<br>
+        <b>Score:</b> ${r.score}/${r.total}<br>
+        <b>Date:</b> ${r.createdAt}
+
+        <details>
+          <summary>View Full Answers</summary>
+          ${reviewHTML}
+        </details>
+
       </div>
     `;
   });
-
-  document.getElementById("ranking").innerHTML=rankHTML;
-
-  // ---------- PIE ----------
-  let total = results.length;
-  let pass = results.filter(r=>r.score>=5).length;
-  let fail = total-pass;
-
-  new Chart(document.getElementById("pie"),{
-    type:"pie",
-    data:{
-      labels:["Pass","Fail"],
-      datasets:[{data:[pass,fail]}]
-    }
-  });
-
-  // ---------- BAR ----------
-  new Chart(document.getElementById("bar"),{
-    type:"bar",
-    data:{
-      labels:results.map(r=>r.studentName),
-      datasets:[{
-        label:"Score",
-        data:results.map(r=>r.score)
-      }]
-    }
-  });
-
-  // ---------- LIST ----------
-  let html="";
-  results.forEach(r=>{
-    html+=`
-      <div class="card">
-        <b>${r.studentName}</b> (${r.studentClass})<br>
-        Score: ${r.score}/${r.total}<br>
-        <button onclick='view(${JSON.stringify(JSON.stringify(r))})'>View</button>
-      </div>
-    `;
-  });
-
-  document.getElementById("results").innerHTML=html;
 };
 
-window.view = function(data){
-  let r = JSON.parse(data);
-
-  let w = r.review.map((q,i)=>{
-    return `
-      <div class="card">
-        Q${i+1}: ${q.question}<br>
-        Your: ${q.studentAnswer}<br>
-        Correct: ${q.correctAnswer}
-      </div>
-    `;
-  }).join("");
-
-  document.body.innerHTML += `
-    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:white;overflow:auto;padding:20px">
-      <h2>${r.studentName}</h2>
-      ${w}
-      <button onclick="location.reload()">Close</button>
-    </div>
-  `;
-};
 </script>
 
 </body>
