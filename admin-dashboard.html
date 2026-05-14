@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Dashboard (Fixed)</title>
+  <title>Admin Dashboard</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -21,8 +21,24 @@
       margin:auto;
     }
 
-    h1{text-align:center;}
+    h1{
+      text-align:center;
+      margin-bottom:15px;
+    }
 
+    /* FILTER */
+    .filter{
+      text-align:center;
+      margin-bottom:15px;
+    }
+
+    select{
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #ccc;
+    }
+
+    /* STATS */
     .grid{
       display:grid;
       grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
@@ -35,20 +51,22 @@
       padding:15px;
       border-radius:10px;
       text-align:center;
-      box-shadow:0 2px 6px rgba(0,0,0,0.1);
+      box-shadow:0 2px 6px rgba(0,0,0,0.08);
     }
 
-    .charts{
-      display:grid;
-      grid-template-columns:1fr;
-      gap:15px;
+    /* SMALL CHART AREA */
+    .chartBox{
+      display:flex;
+      justify-content:center;
       margin-bottom:15px;
     }
 
     canvas{
+      max-width:220px !important;
+      max-height:220px !important;
       background:white;
-      border-radius:10px;
       padding:10px;
+      border-radius:10px;
     }
 
     table{
@@ -61,20 +79,13 @@
 
     th,td{
       padding:10px;
-      border:1px solid #eee;
       text-align:center;
+      border:1px solid #eee;
     }
 
     th{
       background:#007bff;
       color:white;
-    }
-
-    .empty{
-      text-align:center;
-      background:white;
-      padding:20px;
-      border-radius:10px;
     }
 
   </style>
@@ -86,8 +97,18 @@
 
   <h1>Admin Dashboard</h1>
 
-  <div class="grid">
+  <!-- CLASS FILTER -->
+  <div class="filter">
+    <select id="classFilter" onchange="loadData()">
+      <option value="ALL">All Classes</option>
+      <option value="10">Class 10</option>
+      <option value="11">Class 11</option>
+      <option value="12">Class 12</option>
+    </select>
+  </div>
 
+  <!-- STATS -->
+  <div class="grid">
     <div class="card">
       <h2 id="total">0</h2>
       <p>Total</p>
@@ -102,14 +123,25 @@
       <h2 id="topper">-</h2>
       <p>Topper</p>
     </div>
-
   </div>
 
-  <div class="charts">
-    <canvas id="pie"></canvas>
+  <!-- SMALL PIE -->
+  <div class="chartBox">
+    <canvas id="pieChart"></canvas>
   </div>
 
-  <div id="tableWrap"></div>
+  <!-- TABLE -->
+  <table>
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Score</th>
+      </tr>
+    </thead>
+    <tbody id="table"></tbody>
+  </table>
 
 </div>
 
@@ -119,28 +151,31 @@ import { db } from './firebase-config.js';
 import { collection, getDocs } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-let pie;
+let chart;
 
-function safeDate(d){
-  let date = new Date(d);
-  return isNaN(date.getTime()) ? Date.now() : date;
-}
+window.loadData = async function(){
 
-async function load(){
+  const filter = document.getElementById("classFilter").value;
 
   const snap = await getDocs(collection(db,"results"));
 
   let list = [];
 
   snap.forEach(doc=>{
-    list.push(doc.data());
+    let r = doc.data();
+
+    if(filter === "ALL" || r.studentClass == filter){
+      list.push(r);
+    }
   });
 
   if(list.length === 0){
-    document.getElementById("tableWrap").innerHTML =
-      `<div class="empty">No Data Found</div>`;
+    document.getElementById("table").innerHTML =
+      "<tr><td colspan='4'>No Data</td></tr>";
     return;
   }
+
+  list.sort((a,b)=>b.score-a.score);
 
   let total = list.length;
   let sum = 0;
@@ -149,17 +184,7 @@ async function load(){
 
   let topper = list[0];
 
-  let html = `
-    <table>
-      <tr>
-        <th>Rank</th>
-        <th>Name</th>
-        <th>Class</th>
-        <th>Score</th>
-      </tr>
-  `;
-
-  list.sort((a,b)=>b.score-a.score);
+  let html = "";
 
   list.forEach((r,i)=>{
 
@@ -186,39 +211,42 @@ async function load(){
     `;
   });
 
-  html += `</table>`;
-
-  document.getElementById("tableWrap").innerHTML = html;
+  document.getElementById("table").innerHTML = html;
 
   document.getElementById("total").innerText = total;
   document.getElementById("avg").innerText = (sum/total).toFixed(2);
-  document.getElementById("topper").innerText = topper.studentName || "-";
+  document.getElementById("topper").innerText = topper.studentName;
 
   drawPie(pass,fail);
-}
+};
 
+/* SMALL MODERN PIE */
 function drawPie(pass,fail){
 
-  if(pie) pie.destroy();
+  if(chart) chart.destroy();
 
-  pie = new Chart(document.getElementById("pie"),{
+  chart = new Chart(document.getElementById("pieChart"),{
     type:"doughnut",
     data:{
       labels:["Pass","Fail"],
       datasets:[{
         data:[pass,fail],
-        backgroundColor:["#28a745","#dc3545"]
+        backgroundColor:["#28a745","#dc3545"],
+        borderWidth:1
       }]
     },
     options:{
       plugins:{
-        legend:{position:"bottom"}
+        legend:{
+          position:"bottom"
+        }
       }
     }
   });
 }
 
-load();
+/* LOAD ON START */
+loadData();
 
 </script>
 
