@@ -5,6 +5,18 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <!-- ================= MATHJAX ================= -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(','\\)'], ['$', '$']],
+        displayMath: [['$$','$$'], ['\\[','\\]']]
+      }
+    };
+  </script>
+
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
   <style>
     * { box-sizing: border-box; }
 
@@ -73,7 +85,6 @@
 
 <div class="container">
   <div id="questions"></div>
-
   <button onclick="submitTest()">Submit Test</button>
 </div>
 
@@ -99,9 +110,7 @@ let answers = {};
 let studentName = "Unknown";
 let studentClass = "Unknown";
 
-/* =========================
-   LOGIN + LOAD STUDENT
-========================= */
+/* ================= LOGIN ================= */
 onAuthStateChanged(auth, async (user) => {
 
   if (!user) {
@@ -111,7 +120,6 @@ onAuthStateChanged(auth, async (user) => {
 
   document.getElementById("studentInfo").innerText = user.email;
 
-  // 🔥 GET STUDENT FROM FIRESTORE
   const q = query(
     collection(db, "students"),
     where("Email", "==", user.email)
@@ -132,9 +140,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 
-/* =========================
-   LOAD TEST
-========================= */
+/* ================= LOAD TEST ================= */
 async function loadTest() {
 
   let testId = localStorage.getItem("testId");
@@ -182,20 +188,23 @@ async function loadTest() {
   });
 
   document.getElementById("questions").innerHTML = html;
+
+  /* ================= IMPORTANT FIX ================= */
+  setTimeout(() => {
+    if (window.MathJax) {
+      MathJax.typesetPromise();
+    }
+  }, 300);
 }
 
 
-/* =========================
-   SAVE ANSWER
-========================= */
+/* ================= SAVE ANSWER ================= */
 window.saveAnswer = function(i, value) {
   answers[i] = value;
 };
 
 
-/* =========================
-   SUBMIT TEST
-========================= */
+/* ================= SUBMIT TEST ================= */
 window.submitTest = async function() {
 
   let correct = 0;
@@ -222,8 +231,6 @@ window.submitTest = async function() {
     total: testData.questions.length,
     review,
     createdAt: new Date().toLocaleString(),
-
-    // ✅ FIXED
     studentName,
     studentClass,
     userEmail: auth.currentUser.email
