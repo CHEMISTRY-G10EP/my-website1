@@ -1,269 +1,217 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Panel</title>
+<title>Admin Dashboard</title>
 
-  <style>
-    body{
-      font-family:Arial;
-      background:#eef2f7;
-      margin:0;
-    }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    /* ===== LOGIN SCREEN ===== */
-    #loginScreen{
-      height:100vh;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-    }
+<style>
+body{font-family:Arial;background:#eef2f7;margin:0}
 
-    .login-box{
-      background:white;
-      padding:30px;
-      border-radius:15px;
-      box-shadow:0 0 15px rgba(0,0,0,0.1);
-      width:300px;
-      text-align:center;
-    }
+/* LOGIN */
+#loginScreen{
+  height:100vh;display:flex;justify-content:center;align-items:center;
+}
+.login-box{
+  background:white;padding:30px;border-radius:15px;width:300px;text-align:center;
+}
+.login-box input{
+  width:100%;padding:12px;margin-top:10px;border-radius:8px;
+}
 
-    .login-box input{
-      width:100%;
-      padding:12px;
-      margin-top:10px;
-      border-radius:8px;
-      border:1px solid #ccc;
-    }
+/* DASHBOARD */
+.container{display:none;padding:20px}
 
-    .login-box button{
-      margin-top:15px;
-      padding:12px;
-      width:100%;
-      border:none;
-      border-radius:8px;
-      background:#007bff;
-      color:white;
-      font-weight:bold;
-      cursor:pointer;
-    }
+.card{
+  background:white;padding:15px;margin:10px 0;border-radius:10px;
+}
 
-    /* ===== YOUR ORIGINAL STYLES (UNCHANGED) ===== */
-    .container{
-      max-width:900px;
-      margin:auto;
-      background:white;
-      padding:30px;
-      border-radius:15px;
-      box-shadow:0 0 15px rgba(0,0,0,0.1);
-      display:none;
-    }
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:15px;
+}
 
-    h2{
-      text-align:center;
-      color:#333;
-      margin-bottom:25px;
-    }
+canvas{
+  max-height:250px !important;
+}
 
-    input, textarea, select{
-      width:100%;
-      padding:12px;
-      margin-bottom:18px;
-      border:1px solid #ccc;
-      border-radius:8px;
-      font-size:15px;
-      box-sizing:border-box;
-    }
-
-    textarea{ resize:vertical; }
-
-    .btn{
-      border:none;
-      padding:12px 20px;
-      border-radius:8px;
-      cursor:pointer;
-      font-size:16px;
-      font-weight:bold;
-      transition:0.3s;
-      margin-right:10px;
-    }
-
-    .create-btn{
-      background:#28a745;
-      color:white;
-    }
-
-    .dashboard-btn{
-      background:#007bff;
-      color:white;
-    }
-
-    .btn:hover{
-      transform:scale(1.03);
-    }
-
-    #msg{
-      margin-top:20px;
-      font-weight:bold;
-      text-align:center;
-    }
-
-    .note{
-      background:#fff3cd;
-      padding:15px;
-      border-radius:8px;
-      margin-bottom:20px;
-      color:#856404;
-    }
-
-    .card{
-      background:#fff;
-      padding:15px;
-      margin:10px 0;
-      border-radius:10px;
-      box-shadow:0 0 5px rgba(0,0,0,0.1);
-    }
-  </style>
+/* medals */
+.gold{color:gold;font-weight:bold}
+.silver{color:silver;font-weight:bold}
+.bronze{color:#cd7f32;font-weight:bold}
+</style>
 </head>
 
 <body>
 
-<!-- ================= LOGIN ================= -->
+<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-box">
     <h2>Admin Login</h2>
-    <input type="password" id="pass" placeholder="Enter Password">
-    <button onclick="checkPass()">Login</button>
-    <p id="error" style="color:red;"></p>
+    <input type="password" id="pass">
+    <button onclick="login()">Login</button>
   </div>
 </div>
 
-<!-- ================= YOUR ORIGINAL PANEL ================= -->
-<div class="container">
+<!-- DASHBOARD -->
+<div class="container" id="dash">
 
-  <h2>Admin Panel</h2>
+<h2>Admin Analytics Dashboard</h2>
 
-  <div class="note">
-    Create tests and view all student results.
+<select id="classFilter" onchange="loadAll()">
+  <option value="all">All Classes</option>
+  <option value="10">Class 10</option>
+  <option value="11">Class 11</option>
+  <option value="12">Class 12</option>
+</select>
+
+<div class="grid">
+
+  <div class="card">
+    <h3>Pie Chart</h3>
+    <canvas id="pie"></canvas>
   </div>
 
-  <select id="className">
-    <option value="">Select Class</option>
-    <option value="10">Class 10</option>
-    <option value="11">Class 11</option>
-    <option value="12">Class 12</option>
-    <option value="IIT-JEE">IIT-JEE</option>
-    <option value="NEET">NEET</option>
-  </select>
+  <div class="card">
+    <h3>Top Students</h3>
+    <div id="rank"></div>
+  </div>
 
-  <input id="title" placeholder="Enter Test Title">
+</div>
 
-  <textarea id="jsonInput" rows="12"
-placeholder='[
-  {
-    "question": "What is H2O?",
-    "options": ["Water","Oxygen","Hydrogen","Salt"],
-    "answer": "Water",
-    "solution": "H2O is water"
-  }
-]'></textarea>
+<div class="card">
+  <h3>All Results</h3>
+  <div id="list"></div>
+</div>
 
-  <button class="btn create-btn" onclick="createTest()">Create Test</button>
-
-  <button class="btn dashboard-btn" onclick="goDashboard()">Dashboard</button>
-
-  <p id="msg"></p>
-
-  <hr>
-
-  <h2>Student Results</h2>
-  <button class="btn dashboard-btn" onclick="loadResults()">Load Results</button>
-
-  <div id="resultsBox"></div>
+<div id="detail"></div>
 
 </div>
 
 <script type="module">
 
 import { db } from './firebase-config.js';
-import {
-  addDoc,
-  collection,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs } from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ================= PASSWORD LOCK ================= */
-window.checkPass = function(){
-
-  let pass = document.getElementById("pass").value;
-
-  if(pass === "7812"){
-    document.getElementById("loginScreen").style.display = "none";
-    document.querySelector(".container").style.display = "block";
-  }
-  else{
-    document.getElementById("error").innerText = "Wrong Password!";
-  }
+/* LOGIN */
+window.login = function(){
+  if(document.getElementById("pass").value === "7812"){
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("dash").style.display="block";
+    loadAll();
+  }else alert("Wrong password");
 };
 
-/* ================= CREATE TEST ================= */
-window.createTest = async function () {
+let allResults=[];
 
-  try {
+/* LOAD DATA */
+window.loadAll = async function(){
 
-    let className = document.getElementById("className").value;
-    let title = document.getElementById("title").value.trim();
-    let jsonText = document.getElementById("jsonInput").value.trim();
+  const snap = await getDocs(collection(db,"results"));
+  allResults=[];
 
-    let questions = JSON.parse(jsonText);
-
-    await addDoc(collection(db, "tests"), {
-      className,
-      title,
-      questions,
-      createdAt: new Date().toISOString()
-    });
-
-    document.getElementById("msg").style.color = "green";
-    document.getElementById("msg").innerText = "Test Created Successfully!";
-
-  } catch (e) {
-    document.getElementById("msg").style.color = "red";
-    document.getElementById("msg").innerText = e.message;
-  }
-};
-
-/* ================= LOAD RESULTS (UNCHANGED) ================= */
-window.loadResults = async function () {
-
-  let box = document.getElementById("resultsBox");
-  box.innerHTML = "Loading...";
-
-  const snap = await getDocs(collection(db, "results"));
-
-  box.innerHTML = "";
-
-  snap.forEach(doc => {
-
-    let r = doc.data();
-
-    box.innerHTML += `
-      <div class="card">
-
-        <b>Student:</b> ${r.studentName}<br>
-        <b>Class:</b> ${r.studentClass}<br>
-        <b>Email:</b> ${r.userEmail}<br>
-        <b>Test:</b> ${r.testTitle}<br>
-        <b>Score:</b> ${r.score} / ${r.total}<br>
-        <b>Date:</b> ${r.createdAt}
-
-      </div>
-    `;
+  snap.forEach(d=>{
+    allResults.push(d.data());
   });
+
+  render();
 };
 
-/* ================= DASHBOARD ================= */
-window.goDashboard = function () {
-  window.location.href = "dashboard.html";
+/* RENDER */
+function render(){
+
+  let cls=document.getElementById("classFilter").value;
+
+  let data = allResults.filter(r=>{
+    return cls==="all" || r.studentClass==cls;
+  });
+
+  // PIE
+  let correct=0,wrong=0;
+  data.forEach(r=>{
+    correct+=r.score;
+    wrong+=(r.total-r.score);
+  });
+
+  new Chart(document.getElementById("pie"),{
+    type:"pie",
+    data:{
+      labels:["Correct","Wrong"],
+      datasets:[{data:[correct,wrong]}]
+    }
+  });
+
+  // RANKING
+  let ranks={};
+
+  data.forEach(r=>{
+    if(!ranks[r.userEmail]) ranks[r.userEmail]=0;
+    ranks[r.userEmail]+=r.score;
+  });
+
+  let arr=Object.entries(ranks)
+    .sort((a,b)=>b[1]-a[1])
+    .slice(0,3);
+
+  let medals=["gold","silver","bronze"];
+  document.getElementById("rank").innerHTML=
+    arr.map((a,i)=>`
+      <p class="${medals[i]}">
+        ${i+1}. ${a[0]} - ${a[1]}
+      </p>
+    `).join("");
+
+  // LIST
+  document.getElementById("list").innerHTML=
+    data.map((r,i)=>`
+      <div class="card">
+        <b>${r.studentName}</b> (${r.studentClass})<br>
+        Score: ${r.score}/${r.total}
+        <button onclick='view(${i})'>View</button>
+      </div>
+    `).join("");
+}
+
+/* VIEW DETAIL */
+window.view = function(i){
+
+  let r=allResults[i];
+
+  document.getElementById("detail").innerHTML=`
+    <div class="card">
+      <h3>${r.studentName} Result</h3>
+
+      ${r.review.map((q,idx)=>`
+        <div>
+          <b>Q${idx+1}: ${q.question}</b><br>
+          Your: ${q.studentAnswer}<br>
+          Correct: ${q.correctAnswer}<br>
+          ${q.solution}
+          <hr>
+        </div>
+      `).join("")}
+
+      <button onclick="downloadCert('${r.studentName}',${r.score})">
+        Download Certificate
+      </button>
+    </div>
+  `;
+};
+
+/* CERTIFICATE */
+window.downloadCert=function(name,score){
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.text("Certificate of Achievement",20,20);
+  doc.text("Name: "+name,20,40);
+  doc.text("Score: "+score,20,60);
+
+  doc.save(name+"_certificate.pdf");
 };
 
 </script>
