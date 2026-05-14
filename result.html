@@ -1,133 +1,120 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Test Result</title>
+  <title>Advanced Result System</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
 
-    *{
-      box-sizing:border-box;
-    }
-
     body{
-      font-family:Arial, sans-serif;
-      background:#eef2f7;
+      font-family:Arial;
       margin:0;
+      background:#eef2f7;
       padding:20px;
     }
 
     .container{
-      max-width:1000px;
+      max-width:1100px;
       margin:auto;
     }
 
-    .header{
-      text-align:center;
-      margin-bottom:25px;
-    }
-
-    .summary-card{
-      background:white;
-      padding:25px;
-      border-radius:15px;
-      box-shadow:0 0 10px rgba(0,0,0,0.08);
-      margin-bottom:25px;
-    }
-
-    .summary-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:15px;
-      margin-top:20px;
-    }
-
-    .mini-card{
-      padding:15px;
-      border-radius:10px;
-      color:white;
-      text-align:center;
-      font-weight:bold;
-    }
-
-    .score-card{ background:#007bff; }
-    .correct-card{ background:#28a745; }
-    .wrong-card{ background:#dc3545; }
-    .percent-card{ background:#6f42c1; }
-
-    .question-box{
+    .card{
       background:white;
       padding:20px;
-      margin-bottom:20px;
+      border-radius:12px;
+      margin-bottom:15px;
+      box-shadow:0 0 10px rgba(0,0,0,0.1);
+    }
+
+    /* ================= QUESTION ================= */
+    .q-box{
+      background:white;
+      padding:18px;
+      margin:15px 0;
       border-radius:12px;
       box-shadow:0 0 8px rgba(0,0,0,0.08);
+      scroll-margin-top:100px;
     }
 
-    .correct{ color:#28a745; font-weight:bold; }
-    .wrong{ color:#dc3545; font-weight:bold; }
+    .correct{color:green;font-weight:bold;}
+    .wrong{color:red;font-weight:bold;}
 
-    .solution{
-      background:#f8f9fa;
-      padding:12px;
+    /* ================= NAVIGATION ================= */
+    .side-nav{
+      position:fixed;
+      right:10px;
+      top:120px;
+      width:70px;
+      background:white;
+      border-radius:12px;
+      box-shadow:0 0 10px rgba(0,0,0,0.2);
+      padding:10px;
+      max-height:65vh;
+      overflow:auto;
+    }
+
+    .nav-item{
+      width:40px;
+      height:40px;
+      margin:6px auto;
+      display:flex;
+      justify-content:center;
+      align-items:center;
       border-radius:8px;
-      margin-top:10px;
+      font-weight:bold;
+      color:white;
+      cursor:pointer;
     }
 
-    .btn-area{
-      text-align:center;
-      margin-top:30px;
+    .c{background:#28a745;}
+    .w{background:#dc3545;}
+
+    /* ================= FLOAT BOTTOM BAR ================= */
+    .bottom-nav{
+      position:fixed;
+      bottom:0;
+      left:0;
+      width:100%;
+      background:white;
+      display:flex;
+      justify-content:space-around;
+      padding:10px;
+      box-shadow:0 -2px 10px rgba(0,0,0,0.2);
     }
 
-    .btn{
+    .bottom-nav button{
       border:none;
-      padding:12px 20px;
-      margin:10px;
+      padding:10px 15px;
       border-radius:8px;
-      font-size:15px;
       font-weight:bold;
       cursor:pointer;
       color:white;
+      flex:1;
+      margin:0 5px;
     }
 
-    .dashboard-btn{ background:#007bff; }
-    .results-btn{ background:#28a745; }
+    .blue{background:#007bff;}
+    .green{background:#28a745;}
+    .purple{background:#6f42c1;}
 
-    .badge{
-      display:inline-block;
-      padding:8px 15px;
-      border-radius:20px;
-      color:white;
-      font-weight:bold;
-      margin-top:10px;
+    /* ================= LEADERBOARD ================= */
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:15px;
     }
 
-    .excellent{ background:#28a745; }
-    .good{ background:#17a2b8; }
-    .average{ background:#ffc107; color:black; }
-    .poor{ background:#dc3545; }
-
-    /* ✅ QUESTION GRID */
-    .q-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(40px,1fr));
-      gap:10px;
-      margin-top:20px;
+    th,td{
+      border:1px solid #ddd;
+      padding:10px;
+      text-align:center;
     }
 
-    .q-box{
-      width:40px;
-      height:40px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:8px;
-      font-weight:bold;
+    th{
+      background:#007bff;
       color:white;
     }
-
-    .q-correct{ background:#28a745; }
-    .q-wrong{ background:#dc3545; }
 
   </style>
 </head>
@@ -136,149 +123,142 @@
 
 <div class="container">
 
-  <div class="header">
-    <h1>Test Result</h1>
-    <p>Review your performance</p>
+  <div class="card" id="summary"></div>
+
+  <div class="card">
+    <h3>Question Review</h3>
+    <div id="questions"></div>
   </div>
 
-  <div id="summary"></div>
-
-  <h3 style="text-align:center;">Question Summary</h3>
-  <div class="q-grid" id="qGrid"></div>
-
-  <div id="review"></div>
-
-  <div class="btn-area">
-    <button class="btn dashboard-btn" onclick="goDashboard()">
-      Back to Dashboard
-    </button>
-
-    <button class="btn results-btn" onclick="goResults()">
-      Previous Results
-    </button>
+  <div class="card">
+    <h3>🏆 Rank Board</h3>
+    <div id="rankBoard">Loading...</div>
   </div>
 
 </div>
 
-<script>
+<!-- SIDE NAV -->
+<div class="side-nav" id="nav"></div>
 
+<!-- FLOAT BOTTOM NAV -->
+<div class="bottom-nav">
+
+  <button class="blue" onclick="goDashboard()">Dashboard</button>
+  <button class="green" onclick="goResults()">Results</button>
+  <button class="purple" onclick="loadRank()">Rank Board</button>
+
+</div>
+
+<script type="module">
+
+import { db, auth } from './firebase-config.js';
+import {
+  addDoc,
+  collection,
+  getDocs,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ================= LOAD RESULT FROM SESSION ================= */
 let result = JSON.parse(localStorage.getItem("latestResult"));
 
 if(!result){
+  document.body.innerHTML = "<h2>No Result Found</h2>";
+}
 
-  document.body.innerHTML = "<h2>No result found</h2>";
+/* ================= AUTO SAVE TO FIREBASE ================= */
+await addDoc(collection(db,"results"), result);
 
-}else{
+/* ================= SUMMARY ================= */
+document.getElementById("summary").innerHTML = `
+  <h2>${result.testTitle}</h2>
+  <p><b>Student:</b> ${result.studentName}</p>
+  <p><b>Score:</b> ${result.score}/${result.total}</p>
+`;
 
-  let percentage = Math.round((result.score / result.total) * 100);
-  let wrong = result.total - result.score;
+/* ================= QUESTIONS ================= */
+let qHTML = "";
+let navHTML = "";
 
-  let performanceClass = "poor";
-  let performanceText = "Needs Improvement";
+result.review.forEach((q,i)=>{
 
-  if(percentage >= 80){
-    performanceClass = "excellent";
-    performanceText = "Excellent";
-  }
-  else if(percentage >= 60){
-    performanceClass = "good";
-    performanceText = "Good";
-  }
-  else if(percentage >= 40){
-    performanceClass = "average";
-    performanceText = "Average";
-  }
+  let correct = q.studentAnswer === q.correctAnswer;
 
-  // ================= SUMMARY =================
-  document.getElementById("summary").innerHTML = `
-    <div class="summary-card">
-
-      <h2>${result.testTitle}</h2>
-
-      <p><b>Student:</b> ${result.studentName || "Unknown"}</p>
-      <p><b>Class:</b> ${result.studentClass || "Unknown"}</p>
-      <p><b>Submitted On:</b> ${result.createdAt}</p>
-
-      <div class="badge ${performanceClass}">
-        ${performanceText}
-      </div>
-
-      <div class="summary-grid">
-
-        <div class="mini-card score-card">
-          Score<br>${result.score}/${result.total}
-        </div>
-
-        <div class="mini-card correct-card">
-          Correct<br>${result.score}
-        </div>
-
-        <div class="mini-card wrong-card">
-          Wrong<br>${wrong}
-        </div>
-
-        <div class="mini-card percent-card">
-          Percentage<br>${percentage}%
-        </div>
-
-      </div>
-
+  qHTML += `
+    <div class="q-box" id="q${i}">
+      <h3>Q${i+1}. ${q.question}</h3>
+      <p class="${correct?'correct':'wrong'}">
+        Your Answer: ${q.studentAnswer}
+      </p>
+      <p><b>Correct:</b> ${q.correctAnswer}</p>
     </div>
   `;
 
-  // ================= GRID =================
-  let gridHTML = "";
+  navHTML += `
+    <div class="nav-item ${correct?'c':'w'}"
+         onclick="goto(${i})">
+      ${i+1}
+    </div>
+  `;
+});
 
-  result.review.forEach((r, i) => {
+document.getElementById("questions").innerHTML = qHTML;
+document.getElementById("nav").innerHTML = navHTML;
 
-    let isCorrect = r.studentAnswer === r.correctAnswer;
+/* ================= NAV ================= */
+window.goto = (i)=>{
+  document.getElementById("q"+i)
+  .scrollIntoView({behavior:"smooth"});
+};
 
-    gridHTML += `
-      <div class="q-box ${isCorrect ? 'q-correct' : 'q-wrong'}">
-        ${i + 1}
-      </div>
-    `;
+/* ================= RANK BOARD ================= */
+window.loadRank = async function(){
+
+  let snap = await getDocs(collection(db,"results"));
+
+  let students = [];
+
+  snap.forEach(doc=>{
+    students.push(doc.data());
   });
 
-  document.getElementById("qGrid").innerHTML = gridHTML;
+  students.sort((a,b)=>b.score-a.score);
 
-  // ================= REVIEW =================
-  let html = "";
+  let html = `
+    <table>
+      <tr>
+        <th>Rank</th>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Score</th>
+      </tr>
+  `;
 
-  result.review.forEach((r, index)=>{
-
-    let isCorrect = r.studentAnswer === r.correctAnswer;
-
+  students.forEach((s,i)=>{
     html += `
-      <div class="question-box">
-
-        <h3>Q${index + 1}. ${r.question}</h3>
-
-        <p class="${isCorrect ? 'correct' : 'wrong'}">
-          Your Answer: ${r.studentAnswer}
-        </p>
-
-        <p><b>Correct Answer:</b> ${r.correctAnswer}</p>
-
-        <div class="solution">
-          <b>Solution:</b><br>
-          ${r.solution}
-        </div>
-
-      </div>
+      <tr>
+        <td>${i+1}</td>
+        <td>${s.studentName}</td>
+        <td>${s.studentClass}</td>
+        <td>${s.score}/${s.total}</td>
+      </tr>
     `;
   });
 
-  document.getElementById("review").innerHTML = html;
-}
+  html += "</table>";
 
-function goDashboard(){
-  window.location.href = "dashboard.html";
-}
+  document.getElementById("rankBoard").innerHTML = html;
+};
 
-function goResults(){
-  window.location.href = "results.html";
-}
+/* ================= NAV BUTTONS ================= */
+window.goDashboard = ()=>{
+  window.location.href="dashboard.html";
+};
+
+window.goResults = ()=>{
+  window.location.href="results.html";
+};
 
 </script>
 
