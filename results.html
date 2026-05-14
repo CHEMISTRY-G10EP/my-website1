@@ -7,511 +7,275 @@
 
   <style>
 
-    *{
-      box-sizing:border-box;
-    }
+    *{box-sizing:border-box;}
 
     body{
-
-      font-family:Arial, sans-serif;
-
+      font-family:Arial;
       background:#eef2f7;
-
       margin:0;
-
       padding:20px;
     }
 
     .container{
-
       max-width:1100px;
-
       margin:auto;
     }
 
     .topbar{
-
       display:flex;
-
       justify-content:space-between;
-
       align-items:center;
-
       flex-wrap:wrap;
-
-      margin-bottom:25px;
+      margin-bottom:20px;
     }
 
     h1{
-
       margin:0;
-      color:#333;
     }
 
-    .dashboard-btn{
-
-      border:none;
-
+    .btn{
       background:#007bff;
-
       color:white;
-
+      border:none;
       padding:12px 18px;
-
       border-radius:8px;
-
-      font-weight:bold;
-
       cursor:pointer;
-
-      transition:0.3s;
+      font-weight:bold;
+      transition:0.2s;
     }
 
-    .dashboard-btn:hover{
-
-      background:#0056b3;
-
-      transform:scale(1.03);
+    .btn:hover{
+      transform:scale(1.05);
     }
 
+    /* RESULT CARD */
     .result-card{
-
       background:white;
-
-      border-radius:15px;
-
       padding:20px;
-
-      margin-bottom:25px;
-
+      border-radius:15px;
+      margin-bottom:20px;
       box-shadow:0 0 10px rgba(0,0,0,0.08);
-    }
-
-    .card-header{
-
-      display:flex;
-
-      justify-content:space-between;
-
-      align-items:center;
-
-      flex-wrap:wrap;
-
-      gap:10px;
     }
 
     .badge{
-
-      padding:8px 14px;
-
+      padding:6px 12px;
       border-radius:20px;
-
       color:white;
-
       font-weight:bold;
-
-      font-size:14px;
+      display:inline-block;
     }
 
-    .excellent{
-      background:#28a745;
-    }
-
-    .good{
-      background:#17a2b8;
-    }
-
-    .average{
-      background:#ffc107;
-      color:black;
-    }
-
-    .poor{
-      background:#dc3545;
-    }
+    .excellent{background:#28a745;}
+    .good{background:#17a2b8;}
+    .average{background:#ffc107;color:black;}
+    .poor{background:#dc3545;}
 
     .stats{
-
       display:grid;
-
-      grid-template-columns:
-      repeat(auto-fit, minmax(150px,1fr));
-
-      gap:15px;
-
-      margin-top:20px;
-    }
-
-    .stat-box{
-
-      padding:15px;
-
-      border-radius:10px;
-
-      color:white;
-
-      text-align:center;
-
-      font-weight:bold;
-    }
-
-    .score{
-      background:#007bff;
-    }
-
-    .correct{
-      background:#28a745;
-    }
-
-    .wrong{
-      background:#dc3545;
-    }
-
-    .percent{
-      background:#6f42c1;
-    }
-
-    details{
-
-      margin-top:20px;
-    }
-
-    summary{
-
-      cursor:pointer;
-
-      padding:12px;
-
-      background:#f1f1f1;
-
-      border-radius:8px;
-
-      font-weight:bold;
-    }
-
-    .question-box{
-
-      background:#fafafa;
-
-      border:1px solid #ddd;
-
-      border-radius:10px;
-
-      padding:15px;
-
+      grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+      gap:10px;
       margin-top:15px;
     }
 
-    .right-answer{
-
-      color:#28a745;
+    .box{
+      padding:12px;
+      border-radius:10px;
+      color:white;
+      text-align:center;
       font-weight:bold;
     }
 
-    .wrong-answer{
+    .score{background:#007bff;}
+    .correct{background:#28a745;}
+    .wrong{background:#dc3545;}
+    .percent{background:#6f42c1;}
 
-      color:#dc3545;
-      font-weight:bold;
+    details{
+      margin-top:15px;
     }
 
-    .solution{
-
-      background:#f0f3f7;
-
+    summary{
+      cursor:pointer;
       padding:10px;
-
+      background:#f1f1f1;
       border-radius:8px;
+      font-weight:bold;
+    }
 
+    .qbox{
+      background:#fafafa;
+      border:1px solid #ddd;
+      padding:12px;
+      border-radius:10px;
       margin-top:10px;
     }
 
+    .right{color:#28a745;font-weight:bold;}
+    .wronga{color:#dc3545;font-weight:bold;}
+
     .empty{
-
-      background:white;
-
-      padding:30px;
-
-      border-radius:15px;
-
       text-align:center;
-
-      box-shadow:0 0 10px rgba(0,0,0,0.08);
+      background:white;
+      padding:30px;
+      border-radius:15px;
     }
 
   </style>
 </head>
+
 <body>
 
 <div class="container">
 
   <div class="topbar">
+    <h1>My Results</h1>
 
-    <h1>My Previous Results</h1>
-
-    <button
-      class="dashboard-btn"
-      onclick="goDashboard()"
-    >
+    <button class="btn" onclick="goDashboard()">
       Back to Dashboard
     </button>
-
   </div>
 
-  <div id="results"></div>
+  <div id="results">Loading...</div>
 
 </div>
 
 <script type="module">
 
-import { db, auth }
-from './firebase-config.js';
+import { db, auth } from './firebase-config.js';
 
 import {
-
   collection,
-  getDocs
-
-} from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  getDocs,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import {
-
   onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-} from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+/* ================= AUTH ================= */
+onAuthStateChanged(auth, async(user)=>{
 
-onAuthStateChanged(
-
-  auth,
-
-  async(user)=>{
-
-    if(!user){
-
-      alert("Login required");
-
-      window.location.href =
-        "index.html";
-
-      return;
-    }
-
-    const querySnapshot =
-      await getDocs(
-        collection(db, "results")
-      );
-
-    let html = "";
-
-    querySnapshot.forEach((doc)=>{
-
-      let r = doc.data();
-
-      if(r.userEmail !== user.email)
-        return;
-
-      let percentage =
-        Math.round(
-          (r.score / r.total) * 100
-        );
-
-      let wrong =
-        r.total - r.score;
-
-      let performanceClass = "poor";
-
-      let performanceText =
-        "Needs Improvement";
-
-      if(percentage >= 80){
-
-        performanceClass =
-          "excellent";
-
-        performanceText =
-          "Excellent";
-      }
-      else if(percentage >= 60){
-
-        performanceClass =
-          "good";
-
-        performanceText =
-          "Good";
-      }
-      else if(percentage >= 40){
-
-        performanceClass =
-          "average";
-
-        performanceText =
-          "Average";
-      }
-
-      html += `
-
-        <div class="result-card">
-
-          <div class="card-header">
-
-            <div>
-
-              <h2>
-                ${r.testTitle || "Test"}
-              </h2>
-
-              <p>
-
-                <b>Date:</b>
-
-                ${r.createdAt}
-
-              </p>
-
-            </div>
-
-            <div class="badge ${performanceClass}">
-
-              ${performanceText}
-
-            </div>
-
-          </div>
-
-          <div class="stats">
-
-            <div class="stat-box score">
-
-              Score<br>
-
-              ${r.score}/${r.total}
-
-            </div>
-
-            <div class="stat-box correct">
-
-              Correct<br>
-
-              ${r.score}
-
-            </div>
-
-            <div class="stat-box wrong">
-
-              Wrong<br>
-
-              ${wrong}
-
-            </div>
-
-            <div class="stat-box percent">
-
-              Percentage<br>
-
-              ${percentage}%
-
-            </div>
-
-          </div>
-
-          <details>
-
-            <summary>
-
-              View Questions & Solutions
-
-            </summary>
-
-            ${
-              (r.review || [])
-              .map((q, index)=>{
-
-                let correct =
-                  q.studentAnswer ===
-                  q.correctAnswer;
-
-                return `
-
-                  <div class="question-box">
-
-                    <h3>
-
-                      Q${index + 1}.
-                      ${q.question}
-
-                    </h3>
-
-                    <p class="${
-                      correct
-                      ? 'right-answer'
-                      : 'wrong-answer'
-                    }">
-
-                      Your Answer:
-                      ${q.studentAnswer}
-
-                    </p>
-
-                    <p>
-
-                      <b>Correct Answer:</b>
-
-                      ${q.correctAnswer}
-
-                    </p>
-
-                    <div class="solution">
-
-                      <b>Solution:</b><br>
-
-                      ${q.solution}
-
-                    </div>
-
-                  </div>
-                `;
-              }).join("")
-            }
-
-          </details>
-
-        </div>
-      `;
-    });
-
-    if(html === ""){
-
-      html = `
-
-        <div class="empty">
-
-          <h2>
-
-            No previous results found
-
-          </h2>
-
-          <p>
-
-            Attempt a test first.
-
-          </p>
-
-        </div>
-      `;
-    }
-
-    document.getElementById("results")
-      .innerHTML = html;
+  if(!user){
+    window.location.href="index.html";
+    return;
   }
-);
 
-window.goDashboard = function(){
+  /* ================= FETCH RESULTS ================= */
+  const q = query(
+    collection(db,"results"),
+    orderBy("createdAt","desc")
+  );
 
-  window.location.href =
-    "dashboard.html";
-};
+  const snap = await getDocs(q);
+
+  let html = "";
+
+  snap.forEach(doc=>{
+
+    let r = doc.data();
+
+    if(r.userEmail !== user.email) return;
+
+    let percent = Math.round((r.score/r.total)*100);
+    let wrong = r.total - r.score;
+
+    let badgeClass = "poor";
+    let text = "Needs Improvement";
+
+    if(percent >= 80){
+      badgeClass = "excellent";
+      text = "Excellent";
+    } else if(percent >= 60){
+      badgeClass = "good";
+      text = "Good";
+    } else if(percent >= 40){
+      badgeClass = "average";
+      text = "Average";
+    }
+
+    html += `
+      <div class="result-card">
+
+        <h2>${r.testTitle}</h2>
+
+        <p><b>Date:</b> ${new Date(r.createdAt).toLocaleString()}</p>
+
+        <span class="badge ${badgeClass}">
+          ${text}
+        </span>
+
+        <div class="stats">
+
+          <div class="box score">
+            Score<br>${r.score}/${r.total}
+          </div>
+
+          <div class="box correct">
+            Correct<br>${r.score}
+          </div>
+
+          <div class="box wrong">
+            Wrong<br>${wrong}
+          </div>
+
+          <div class="box percent">
+            Percentage<br>${percent}%
+          </div>
+
+        </div>
+
+        <details>
+
+          <summary>View Questions</summary>
+
+          ${
+            (r.review || []).map((q,i)=>{
+
+              let ok = q.studentAnswer === q.correctAnswer;
+
+              return `
+                <div class="qbox">
+
+                  <h3>Q${i+1}. ${q.question}</h3>
+
+                  <p class="${ok?'right':'wronga'}">
+                    Your Answer: ${q.studentAnswer}
+                  </p>
+
+                  <p><b>Correct:</b> ${q.correctAnswer}</p>
+
+                  <p>${q.solution || ""}</p>
+
+                </div>
+              `;
+            }).join("")
+          }
+
+        </details>
+
+      </div>
+    `;
+  });
+
+  if(html === ""){
+    html = `
+      <div class="empty">
+        <h2>No Results Found</h2>
+        <p>Attempt a test first</p>
+      </div>
+    `;
+  }
+
+  document.getElementById("results").innerHTML = html;
+
+});
+
+/* ================= NAV ================= */
+function goDashboard(){
+  window.location.href="dashboard.html";
+}
 
 </script>
 
