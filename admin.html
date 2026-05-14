@@ -113,7 +113,7 @@
 
 <body>
 
-<!-- ================= LOGIN ================= -->
+<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-box">
     <h2>Admin Login</h2>
@@ -123,7 +123,7 @@
   </div>
 </div>
 
-<!-- ================= ADMIN PANEL ================= -->
+<!-- PANEL -->
 <div class="container">
 
   <h2>Admin Panel</h2>
@@ -139,7 +139,6 @@
 
   <input id="title" placeholder="Test Title">
 
-  <!-- FIX: safe JSON input (MathJax supported) -->
   <textarea id="jsonInput" rows="10"
 placeholder='[
   {
@@ -183,14 +182,14 @@ window.checkPass = function(){
   }
 };
 
-/* ================= SAFE JSON PARSE FIX ================= */
+/* ================= SAFE JSON PARSER ================= */
 function safeJSON(text){
   try {
-    // FIX: escape single backslash issues
+    // FIX BACKSLASH ISSUES (MathJax safe)
     text = text.replace(/\\(?!["\\/bfnrtu])/g, "\\\\");
     return JSON.parse(text);
   } catch(e){
-    throw new Error("Invalid JSON format (check MathJax \\ symbols)");
+    throw new Error("Invalid JSON format (check \\ in MathJax)");
   }
 }
 
@@ -220,7 +219,7 @@ window.createTest = async function(){
   }
 };
 
-/* ================= LOAD RESULTS (UNCHANGED LOGIC) ================= */
+/* ================= LOAD RESULTS ================= */
 window.loadResults = async function(){
 
   let box = document.getElementById("resultsBox");
@@ -250,13 +249,10 @@ window.loadResults = async function(){
             background:${ok?'#e7f9ec':'#ffecec'};
             border-left:5px solid ${ok?'green':'red'};
           ">
-
             <b>Q${i+1}:</b> ${q.question}<br>
-
             <b>Your:</b> ${q.studentAnswer}<br>
             <b>Correct:</b> ${q.correctAnswer}<br>
             <small>${q.solution}</small>
-
           </div>
         `;
       });
@@ -264,7 +260,6 @@ window.loadResults = async function(){
 
     box.innerHTML += `
       <div class="card">
-
         <b>Student:</b> ${r.studentName}<br>
         <b>Class:</b> ${r.studentClass}<br>
         <b>Email:</b> ${r.userEmail}<br>
