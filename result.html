@@ -12,356 +12,213 @@
     }
 
     body{
-
       font-family:Arial, sans-serif;
-
       background:#eef2f7;
-
       margin:0;
-
       padding:20px;
     }
 
     .container{
-
       max-width:1000px;
-
       margin:auto;
     }
 
     .header{
-
       text-align:center;
-
       margin-bottom:25px;
     }
 
-    .header h1{
-
-      color:#333;
-      margin-bottom:5px;
-    }
-
     .summary-card{
-
       background:white;
-
       padding:25px;
-
       border-radius:15px;
-
       box-shadow:0 0 10px rgba(0,0,0,0.08);
-
       margin-bottom:25px;
     }
 
     .summary-grid{
-
       display:grid;
-
-      grid-template-columns:
-      repeat(auto-fit, minmax(200px,1fr));
-
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
       gap:15px;
-
       margin-top:20px;
     }
 
     .mini-card{
-
       padding:15px;
-
       border-radius:10px;
-
       color:white;
-
       text-align:center;
-
       font-weight:bold;
     }
 
-    .score-card{
-      background:#007bff;
-    }
-
-    .correct-card{
-      background:#28a745;
-    }
-
-    .wrong-card{
-      background:#dc3545;
-    }
-
-    .percent-card{
-      background:#6f42c1;
-    }
+    .score-card{ background:#007bff; }
+    .correct-card{ background:#28a745; }
+    .wrong-card{ background:#dc3545; }
+    .percent-card{ background:#6f42c1; }
 
     .question-box{
-
       background:white;
-
       padding:20px;
-
       margin-bottom:20px;
-
       border-radius:12px;
-
       box-shadow:0 0 8px rgba(0,0,0,0.08);
     }
 
-    .question-box h3{
-
-      margin-top:0;
-      color:#333;
-    }
-
-    .correct{
-
-      color:#28a745;
-      font-weight:bold;
-    }
-
-    .wrong{
-
-      color:#dc3545;
-      font-weight:bold;
-    }
+    .correct{ color:#28a745; font-weight:bold; }
+    .wrong{ color:#dc3545; font-weight:bold; }
 
     .solution{
-
       background:#f8f9fa;
-
       padding:12px;
-
       border-radius:8px;
-
       margin-top:10px;
     }
 
     .btn-area{
-
       text-align:center;
-
       margin-top:30px;
     }
 
     .btn{
-
       border:none;
-
       padding:12px 20px;
-
       margin:10px;
-
       border-radius:8px;
-
       font-size:15px;
-
       font-weight:bold;
-
       cursor:pointer;
-
-      transition:0.3s;
-
       color:white;
     }
 
-    .dashboard-btn{
-      background:#007bff;
-    }
-
-    .dashboard-btn:hover{
-      background:#0056b3;
-      transform:scale(1.03);
-    }
-
-    .results-btn{
-      background:#28a745;
-    }
-
-    .results-btn:hover{
-      background:#1e7e34;
-      transform:scale(1.03);
-    }
+    .dashboard-btn{ background:#007bff; }
+    .results-btn{ background:#28a745; }
 
     .badge{
-
       display:inline-block;
-
       padding:8px 15px;
-
       border-radius:20px;
-
       color:white;
-
       font-weight:bold;
-
       margin-top:10px;
     }
 
-    .excellent{
-      background:#28a745;
+    .excellent{ background:#28a745; }
+    .good{ background:#17a2b8; }
+    .average{ background:#ffc107; color:black; }
+    .poor{ background:#dc3545; }
+
+    /* ✅ QUESTION GRID */
+    .q-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(40px,1fr));
+      gap:10px;
+      margin-top:20px;
     }
 
-    .good{
-      background:#17a2b8;
+    .q-box{
+      width:40px;
+      height:40px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:8px;
+      font-weight:bold;
+      color:white;
     }
 
-    .average{
-      background:#ffc107;
-      color:black;
-    }
-
-    .poor{
-      background:#dc3545;
-    }
+    .q-correct{ background:#28a745; }
+    .q-wrong{ background:#dc3545; }
 
   </style>
 </head>
+
 <body>
 
 <div class="container">
 
   <div class="header">
-
     <h1>Test Result</h1>
-
-    <p>
-      Review your performance
-    </p>
-
+    <p>Review your performance</p>
   </div>
 
   <div id="summary"></div>
 
+  <h3 style="text-align:center;">Question Summary</h3>
+  <div class="q-grid" id="qGrid"></div>
+
   <div id="review"></div>
 
   <div class="btn-area">
-
-    <button
-      class="btn dashboard-btn"
-      onclick="goDashboard()"
-    >
+    <button class="btn dashboard-btn" onclick="goDashboard()">
       Back to Dashboard
     </button>
 
-    <button
-      class="btn results-btn"
-      onclick="goResults()"
-    >
+    <button class="btn results-btn" onclick="goResults()">
       Previous Results
     </button>
-
   </div>
 
 </div>
 
 <script>
 
-let result =
-  JSON.parse(
-    localStorage.getItem("latestResult")
-  );
+let result = JSON.parse(localStorage.getItem("latestResult"));
 
 if(!result){
 
-  document.body.innerHTML =
-    "<h2>No result found</h2>";
-}
-else{
+  document.body.innerHTML = "<h2>No result found</h2>";
 
-  let percentage = Math.round(
-    (result.score / result.total) * 100
-  );
+}else{
 
-  let wrong =
-    result.total - result.score;
+  let percentage = Math.round((result.score / result.total) * 100);
+  let wrong = result.total - result.score;
 
   let performanceClass = "poor";
-
   let performanceText = "Needs Improvement";
 
   if(percentage >= 80){
-
     performanceClass = "excellent";
-
     performanceText = "Excellent";
   }
   else if(percentage >= 60){
-
     performanceClass = "good";
-
     performanceText = "Good";
   }
   else if(percentage >= 40){
-
     performanceClass = "average";
-
     performanceText = "Average";
   }
 
-  document.getElementById("summary")
-    .innerHTML = `
-
+  // ================= SUMMARY =================
+  document.getElementById("summary").innerHTML = `
     <div class="summary-card">
 
       <h2>${result.testTitle}</h2>
 
-      <p>
-
-        <b>Student:</b>
-        ${result.studentName || "Unknown"}
-
-      </p>
-
-      <p>
-
-        <b>Class:</b>
-        ${result.studentClass || "Unknown"}
-
-      </p>
-
-      <p>
-
-        <b>Submitted On:</b>
-        ${result.createdAt}
-
-      </p>
+      <p><b>Student:</b> ${result.studentName || "Unknown"}</p>
+      <p><b>Class:</b> ${result.studentClass || "Unknown"}</p>
+      <p><b>Submitted On:</b> ${result.createdAt}</p>
 
       <div class="badge ${performanceClass}">
-
         ${performanceText}
-
       </div>
 
       <div class="summary-grid">
 
         <div class="mini-card score-card">
-
-          Score<br>
-          ${result.score}/${result.total}
-
+          Score<br>${result.score}/${result.total}
         </div>
 
         <div class="mini-card correct-card">
-
-          Correct<br>
-          ${result.score}
-
+          Correct<br>${result.score}
         </div>
 
         <div class="mini-card wrong-card">
-
-          Wrong<br>
-          ${wrong}
-
+          Wrong<br>${wrong}
         </div>
 
         <div class="mini-card percent-card">
-
-          Percentage<br>
-          ${percentage}%
-
+          Percentage<br>${percentage}%
         </div>
 
       </div>
@@ -369,66 +226,58 @@ else{
     </div>
   `;
 
+  // ================= GRID =================
+  let gridHTML = "";
+
+  result.review.forEach((r, i) => {
+
+    let isCorrect = r.studentAnswer === r.correctAnswer;
+
+    gridHTML += `
+      <div class="q-box ${isCorrect ? 'q-correct' : 'q-wrong'}">
+        ${i + 1}
+      </div>
+    `;
+  });
+
+  document.getElementById("qGrid").innerHTML = gridHTML;
+
+  // ================= REVIEW =================
   let html = "";
 
   result.review.forEach((r, index)=>{
 
-    let isCorrect =
-      r.studentAnswer === r.correctAnswer;
+    let isCorrect = r.studentAnswer === r.correctAnswer;
 
     html += `
-
       <div class="question-box">
 
-        <h3>
+        <h3>Q${index + 1}. ${r.question}</h3>
 
-          Q${index + 1}.
-          ${r.question}
-
-        </h3>
-
-        <p class="${
-          isCorrect ? 'correct' : 'wrong'
-        }">
-
-          Your Answer:
-          ${r.studentAnswer}
-
+        <p class="${isCorrect ? 'correct' : 'wrong'}">
+          Your Answer: ${r.studentAnswer}
         </p>
 
-        <p>
-
-          <b>Correct Answer:</b>
-          ${r.correctAnswer}
-
-        </p>
+        <p><b>Correct Answer:</b> ${r.correctAnswer}</p>
 
         <div class="solution">
-
           <b>Solution:</b><br>
-
           ${r.solution}
-
         </div>
 
       </div>
     `;
   });
 
-  document.getElementById("review")
-    .innerHTML = html;
+  document.getElementById("review").innerHTML = html;
 }
 
 function goDashboard(){
-
-  window.location.href =
-    "dashboard.html";
+  window.location.href = "dashboard.html";
 }
 
 function goResults(){
-
-  window.location.href =
-    "results.html";
+  window.location.href = "results.html";
 }
 
 </script>
