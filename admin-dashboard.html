@@ -1,23 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Admin Analytics Dashboard</title>
+  <title>Modern Admin Dashboard</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <!-- jsPDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
 
     body{
       font-family:Arial;
       margin:0;
+      background:#f4f6fb;
       padding:20px;
-      background:#eef2f7;
     }
 
     .container{
@@ -30,37 +26,62 @@
       margin-bottom:20px;
     }
 
+    /* FILTER BAR */
+    .filter{
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      margin-bottom:20px;
+    }
+
+    select{
+      padding:10px;
+      border-radius:8px;
+      border:1px solid #ccc;
+    }
+
+    /* STATS */
     .grid{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-      gap:15px;
-      margin-bottom:20px;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:12px;
+      margin-bottom:15px;
     }
 
     .card{
       background:white;
-      padding:20px;
-      border-radius:12px;
+      padding:15px;
+      border-radius:10px;
       text-align:center;
-      box-shadow:0 0 10px rgba(0,0,0,0.1);
+      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    /* CHART BOX */
+    .chartBox{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:15px;
+      margin-bottom:20px;
     }
 
     canvas{
-      max-width:100%;
+      background:white;
+      border-radius:10px;
+      padding:10px;
     }
 
+    /* TABLE */
     table{
       width:100%;
       border-collapse:collapse;
-      margin-top:15px;
       background:white;
       border-radius:10px;
       overflow:hidden;
     }
 
     th,td{
-      border:1px solid #ddd;
       padding:10px;
+      border:1px solid #eee;
       text-align:center;
     }
 
@@ -69,19 +90,10 @@
       color:white;
     }
 
-    .btn{
-      background:#007bff;
-      color:white;
-      border:none;
-      padding:8px 12px;
-      border-radius:6px;
-      cursor:pointer;
-      font-weight:bold;
-    }
-
-    .btn:hover{
-      background:#0056b3;
-    }
+    /* MEDALS */
+    .gold{color:gold;font-size:18px;}
+    .silver{color:silver;font-size:18px;}
+    .bronze{color:#cd7f32;font-size:18px;}
 
   </style>
 </head>
@@ -92,160 +104,171 @@
 
   <h1>Admin Analytics Dashboard</h1>
 
+  <!-- FILTER -->
+  <div class="filter">
+    <select id="classFilter" onchange="loadData()">
+      <option value="ALL">All Classes</option>
+      <option value="10">Class 10</option>
+      <option value="11">Class 11</option>
+      <option value="12">Class 12</option>
+    </select>
+  </div>
+
   <!-- STATS -->
   <div class="grid">
 
     <div class="card">
       <h2 id="total">0</h2>
-      <p>Total Results</p>
+      <p>Total</p>
     </div>
 
     <div class="card">
       <h2 id="avg">0</h2>
-      <p>Average Score</p>
+      <p>Avg Score</p>
     </div>
 
     <div class="card">
       <h2 id="topper">-</h2>
-      <p>Top Performer</p>
+      <p>Topper</p>
     </div>
 
   </div>
 
-  <!-- PIE CHART -->
-  <div class="card">
-    <h2>Pass / Fail Ratio</h2>
+  <!-- CHARTS -->
+  <div class="chartBox">
+
     <canvas id="pieChart"></canvas>
+    <canvas id="monthChart"></canvas>
+
   </div>
 
   <!-- TABLE -->
-  <div class="card">
-    <h2>Student Results</h2>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Class</th>
-          <th>Score</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-
-      <tbody id="table"></tbody>
-    </table>
-
-  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Score</th>
+      </tr>
+    </thead>
+    <tbody id="table"></tbody>
+  </table>
 
 </div>
 
 <script type="module">
 
 import { db } from './firebase-config.js';
+import { collection, getDocs } from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-  collection,
-  getDocs
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+let pieChart, monthChart;
 
-let pass = 0;
-let fail = 0;
-let total = 0;
-let sum = 0;
+window.loadData = async function(){
 
-let topper = {score:0,name:""};
-
-async function loadData(){
+  const filter = document.getElementById("classFilter").value;
 
   const snap = await getDocs(collection(db,"results"));
 
-  let tableHTML = "";
+  let list = [];
 
   snap.forEach(doc=>{
-
     let r = doc.data();
+    if(filter === "ALL" || r.studentClass == filter){
+      list.push(r);
+    }
+  });
 
-    total++;
+  /* SORT RANK */
+  list.sort((a,b)=>b.score-a.score);
+
+  let total = list.length;
+  let sum = 0;
+  let pass = 0;
+  let fail = 0;
+
+  let topper = list[0] || {studentName:"-"};
+
+  let tableHTML = "";
+
+  list.forEach((r,i)=>{
+
     sum += r.score;
 
-    let percent = (r.score / r.total) * 100;
+    let percent = (r.score/r.total)*100;
+    if(percent >= 40) pass++; else fail++;
 
-    if(percent >= 40) pass++;
-    else fail++;
-
-    if(r.score > topper.score){
-      topper = {
-        score:r.score,
-        name:r.studentName
-      };
-    }
+    let medal = "";
+    if(i===0) medal = "🥇";
+    else if(i===1) medal = "🥈";
+    else if(i===2) medal = "🥉";
 
     tableHTML += `
       <tr>
+        <td>${medal || i+1}</td>
         <td>${r.studentName}</td>
         <td>${r.studentClass}</td>
         <td>${r.score}/${r.total}</td>
-        <td>
-          <button class="btn"
-            onclick="downloadCert('${r.studentName}',${r.score},${r.total})">
-            Certificate
-          </button>
-        </td>
       </tr>
     `;
   });
 
   document.getElementById("table").innerHTML = tableHTML;
-
   document.getElementById("total").innerText = total;
+  document.getElementById("avg").innerText = total ? (sum/total).toFixed(2) : 0;
+  document.getElementById("topper").innerText = topper.studentName;
 
-  document.getElementById("avg").innerText =
-    total ? (sum / total).toFixed(2) : 0;
+  drawPie(pass,fail);
+  drawMonth(list);
+};
 
-  document.getElementById("topper").innerText =
-    topper.name;
+/* PIE CHART (SMALL MODERN) */
+function drawPie(pass,fail){
 
-  drawChart(pass,fail);
-}
+  if(pieChart) pieChart.destroy();
 
-/* PIE CHART */
-function drawChart(pass,fail){
-
-  new Chart(document.getElementById("pieChart"),{
-    type:"pie",
+  pieChart = new Chart(document.getElementById("pieChart"),{
+    type:"doughnut",
     data:{
       labels:["Pass","Fail"],
       datasets:[{
         data:[pass,fail],
         backgroundColor:["#28a745","#dc3545"]
       }]
+    },
+    options:{
+      plugins:{legend:{position:"bottom"}}
     }
   });
-
 }
 
-/* CERTIFICATE */
-window.downloadCert = function(name,score,total){
+/* MONTHLY CHART */
+function drawMonth(list){
 
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  let months = {};
 
-  let percent = Math.round((score/total)*100);
+  list.forEach(r=>{
+    let d = new Date(r.createdAt);
+    let m = d.getMonth();
 
-  doc.setFontSize(20);
-  doc.text("CERTIFICATE",20,30);
+    months[m] = (months[m]||0)+1;
+  });
 
-  doc.setFontSize(14);
-  doc.text(`This certifies that`,20,50);
+  if(monthChart) monthChart.destroy();
 
-  doc.text(name,20,65);
-
-  doc.text(`Scored ${score}/${total} (${percent}%)`,20,80);
-
-  doc.text("Congratulations 🎉",20,100);
-
-  doc.save(name + "_certificate.pdf");
-};
+  monthChart = new Chart(document.getElementById("monthChart"),{
+    type:"bar",
+    data:{
+      labels:Object.keys(months),
+      datasets:[{
+        label:"Tests Submitted",
+        data:Object.values(months),
+        backgroundColor:"#007bff"
+      }]
+    }
+  });
+}
 
 /* START */
 loadData();
