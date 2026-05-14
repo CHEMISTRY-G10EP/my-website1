@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Modern Admin Dashboard</title>
+  <title>Admin Dashboard (Fixed)</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -17,34 +17,16 @@
     }
 
     .container{
-      max-width:1200px;
+      max-width:1100px;
       margin:auto;
     }
 
-    h1{
-      text-align:center;
-      margin-bottom:20px;
-    }
+    h1{text-align:center;}
 
-    /* FILTER BAR */
-    .filter{
-      display:flex;
-      justify-content:center;
-      gap:10px;
-      margin-bottom:20px;
-    }
-
-    select{
-      padding:10px;
-      border-radius:8px;
-      border:1px solid #ccc;
-    }
-
-    /* STATS */
     .grid{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-      gap:12px;
+      grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+      gap:10px;
       margin-bottom:15px;
     }
 
@@ -53,15 +35,14 @@
       padding:15px;
       border-radius:10px;
       text-align:center;
-      box-shadow:0 2px 8px rgba(0,0,0,0.08);
+      box-shadow:0 2px 6px rgba(0,0,0,0.1);
     }
 
-    /* CHART BOX */
-    .chartBox{
+    .charts{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:1fr;
       gap:15px;
-      margin-bottom:20px;
+      margin-bottom:15px;
     }
 
     canvas{
@@ -70,7 +51,6 @@
       padding:10px;
     }
 
-    /* TABLE */
     table{
       width:100%;
       border-collapse:collapse;
@@ -90,10 +70,12 @@
       color:white;
     }
 
-    /* MEDALS */
-    .gold{color:gold;font-size:18px;}
-    .silver{color:silver;font-size:18px;}
-    .bronze{color:#cd7f32;font-size:18px;}
+    .empty{
+      text-align:center;
+      background:white;
+      padding:20px;
+      border-radius:10px;
+    }
 
   </style>
 </head>
@@ -102,19 +84,8 @@
 
 <div class="container">
 
-  <h1>Admin Analytics Dashboard</h1>
+  <h1>Admin Dashboard</h1>
 
-  <!-- FILTER -->
-  <div class="filter">
-    <select id="classFilter" onchange="loadData()">
-      <option value="ALL">All Classes</option>
-      <option value="10">Class 10</option>
-      <option value="11">Class 11</option>
-      <option value="12">Class 12</option>
-    </select>
-  </div>
-
-  <!-- STATS -->
   <div class="grid">
 
     <div class="card">
@@ -124,7 +95,7 @@
 
     <div class="card">
       <h2 id="avg">0</h2>
-      <p>Avg Score</p>
+      <p>Average</p>
     </div>
 
     <div class="card">
@@ -134,26 +105,11 @@
 
   </div>
 
-  <!-- CHARTS -->
-  <div class="chartBox">
-
-    <canvas id="pieChart"></canvas>
-    <canvas id="monthChart"></canvas>
-
+  <div class="charts">
+    <canvas id="pie"></canvas>
   </div>
 
-  <!-- TABLE -->
-  <table>
-    <thead>
-      <tr>
-        <th>Rank</th>
-        <th>Name</th>
-        <th>Class</th>
-        <th>Score</th>
-      </tr>
-    </thead>
-    <tbody id="table"></tbody>
-  </table>
+  <div id="tableWrap"></div>
 
 </div>
 
@@ -163,48 +119,64 @@ import { db } from './firebase-config.js';
 import { collection, getDocs } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-let pieChart, monthChart;
+let pie;
 
-window.loadData = async function(){
+function safeDate(d){
+  let date = new Date(d);
+  return isNaN(date.getTime()) ? Date.now() : date;
+}
 
-  const filter = document.getElementById("classFilter").value;
+async function load(){
 
   const snap = await getDocs(collection(db,"results"));
 
   let list = [];
 
   snap.forEach(doc=>{
-    let r = doc.data();
-    if(filter === "ALL" || r.studentClass == filter){
-      list.push(r);
-    }
+    list.push(doc.data());
   });
 
-  /* SORT RANK */
-  list.sort((a,b)=>b.score-a.score);
+  if(list.length === 0){
+    document.getElementById("tableWrap").innerHTML =
+      `<div class="empty">No Data Found</div>`;
+    return;
+  }
 
   let total = list.length;
   let sum = 0;
   let pass = 0;
   let fail = 0;
 
-  let topper = list[0] || {studentName:"-"};
+  let topper = list[0];
 
-  let tableHTML = "";
+  let html = `
+    <table>
+      <tr>
+        <th>Rank</th>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Score</th>
+      </tr>
+  `;
+
+  list.sort((a,b)=>b.score-a.score);
 
   list.forEach((r,i)=>{
 
     sum += r.score;
 
     let percent = (r.score/r.total)*100;
-    if(percent >= 40) pass++; else fail++;
 
-    let medal = "";
-    if(i===0) medal = "🥇";
-    else if(i===1) medal = "🥈";
-    else if(i===2) medal = "🥉";
+    if(percent >= 40) pass++;
+    else fail++;
 
-    tableHTML += `
+    if(r.score > topper.score){
+      topper = r;
+    }
+
+    let medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+
+    html += `
       <tr>
         <td>${medal || i+1}</td>
         <td>${r.studentName}</td>
@@ -214,21 +186,22 @@ window.loadData = async function(){
     `;
   });
 
-  document.getElementById("table").innerHTML = tableHTML;
+  html += `</table>`;
+
+  document.getElementById("tableWrap").innerHTML = html;
+
   document.getElementById("total").innerText = total;
-  document.getElementById("avg").innerText = total ? (sum/total).toFixed(2) : 0;
-  document.getElementById("topper").innerText = topper.studentName;
+  document.getElementById("avg").innerText = (sum/total).toFixed(2);
+  document.getElementById("topper").innerText = topper.studentName || "-";
 
   drawPie(pass,fail);
-  drawMonth(list);
-};
+}
 
-/* PIE CHART (SMALL MODERN) */
 function drawPie(pass,fail){
 
-  if(pieChart) pieChart.destroy();
+  if(pie) pie.destroy();
 
-  pieChart = new Chart(document.getElementById("pieChart"),{
+  pie = new Chart(document.getElementById("pie"),{
     type:"doughnut",
     data:{
       labels:["Pass","Fail"],
@@ -238,40 +211,14 @@ function drawPie(pass,fail){
       }]
     },
     options:{
-      plugins:{legend:{position:"bottom"}}
+      plugins:{
+        legend:{position:"bottom"}
+      }
     }
   });
 }
 
-/* MONTHLY CHART */
-function drawMonth(list){
-
-  let months = {};
-
-  list.forEach(r=>{
-    let d = new Date(r.createdAt);
-    let m = d.getMonth();
-
-    months[m] = (months[m]||0)+1;
-  });
-
-  if(monthChart) monthChart.destroy();
-
-  monthChart = new Chart(document.getElementById("monthChart"),{
-    type:"bar",
-    data:{
-      labels:Object.keys(months),
-      datasets:[{
-        label:"Tests Submitted",
-        data:Object.values(months),
-        backgroundColor:"#007bff"
-      }]
-    }
-  });
-}
-
-/* START */
-loadData();
+load();
 
 </script>
 
