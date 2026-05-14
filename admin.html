@@ -54,7 +54,7 @@
       margin-top:20px;
     }
 
-    select{
+    input,select,textarea{
       width:100%;
       padding:10px;
       margin:10px 0;
@@ -67,6 +67,9 @@
       cursor:pointer;
       border-radius:6px;
     }
+
+    .create{background:green;color:white;}
+    .load{background:blue;color:white;}
 
     .card{
       background:#f9f9f9;
@@ -99,7 +102,7 @@
   </div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- PANEL -->
 <div class="container">
 
   <h2>Admin Dashboard</h2>
@@ -109,19 +112,14 @@
     <option value="10">Class 10</option>
     <option value="11">Class 11</option>
     <option value="12">Class 12</option>
-    <option value="IIT-JEE">IIT-JEE</option>
-    <option value="NEET">NEET</option>
   </select>
 
-  <button onclick="loadResults()">Load Results</button>
+  <button class="load" onclick="loadResults()">Load Results</button>
 
   <div class="grid">
     <canvas id="pie"></canvas>
     <canvas id="bar"></canvas>
   </div>
-
-  <h3>Class-wise Summary</h3>
-  <div id="classSummary"></div>
 
   <h3>Student Ranking</h3>
   <div id="ranking"></div>
@@ -150,83 +148,42 @@ window.loadResults = async function(){
 
   let snap = await getDocs(collection(db,"results"));
 
-  let all = [];
+  let results = [];
   let classFilter = document.getElementById("classFilter").value;
 
   snap.forEach(d=>{
     let r = d.data();
 
-    if(classFilter && String(r.studentClass) !== String(classFilter)) return;
+    if(classFilter && r.studentClass != classFilter) return;
 
-    all.push(r);
+    results.push(r);
   });
 
-  if(all.length === 0){
+  if(results.length === 0){
     document.getElementById("results").innerHTML="No data";
-    document.getElementById("ranking").innerHTML="";
-    document.getElementById("classSummary").innerHTML="";
     return;
   }
 
-  // ================= CLASS GROUP =================
-  let classes = {
-    "10": [],
-    "11": [],
-    "12": [],
-    "IIT-JEE": [],
-    "NEET": []
-  };
+  // ---------- RANKING ----------
+  results.sort((a,b)=>b.score-a.score);
 
-  all.forEach(r=>{
-    if(classes[r.studentClass]){
-      classes[r.studentClass].push(r);
-    }
-  });
-
-  // ================= CLASS SUMMARY =================
-  let classHTML = "";
-
-  for(let cls in classes){
-
-    let list = classes[cls];
-
-    if(list.length === 0) continue;
-
-    let avg = list.reduce((a,b)=>a+b.score,0)/list.length;
-    let topper = list.sort((a,b)=>b.score-a.score)[0];
-
-    classHTML += `
-      <div class="card">
-        <h3>${cls}</h3>
-        Students: ${list.length}<br>
-        Avg Score: ${avg.toFixed(2)}<br>
-        🏆 Topper: ${topper.studentName} (${topper.score}/${topper.total})
-      </div>
-    `;
-  }
-
-  document.getElementById("classSummary").innerHTML = classHTML;
-
-  // ================= RANKING =================
-  all.sort((a,b)=>b.score-a.score);
-
-  let rankHTML = "";
-
-  all.forEach((r,i)=>{
-    rankHTML += `
+  let rankHTML="";
+  results.forEach((r,i)=>{
+    rankHTML+=`
       <div class="card">
         🥇 Rank ${i+1}<br>
-        <b>${r.studentName}</b> (${r.studentClass})<br>
+        ${r.studentName} (${r.studentClass})<br>
         Score: ${r.score}/${r.total}
       </div>
     `;
   });
 
-  document.getElementById("ranking").innerHTML = rankHTML;
+  document.getElementById("ranking").innerHTML=rankHTML;
 
-  // ================= PIE =================
-  let pass = all.filter(r=>r.score>=5).length;
-  let fail = all.length-pass;
+  // ---------- PIE ----------
+  let total = results.length;
+  let pass = results.filter(r=>r.score>=5).length;
+  let fail = total-pass;
 
   new Chart(document.getElementById("pie"),{
     type:"pie",
@@ -236,51 +193,50 @@ window.loadResults = async function(){
     }
   });
 
-  // ================= BAR =================
+  // ---------- BAR ----------
   new Chart(document.getElementById("bar"),{
     type:"bar",
     data:{
-      labels:all.map(r=>r.studentName),
+      labels:results.map(r=>r.studentName),
       datasets:[{
         label:"Score",
-        data:all.map(r=>r.score)
+        data:results.map(r=>r.score)
       }]
     }
   });
 
-  // ================= LIST =================
-  let html = "";
-
-  all.forEach(r=>{
-    html += `
+  // ---------- LIST ----------
+  let html="";
+  results.forEach(r=>{
+    html+=`
       <div class="card">
         <b>${r.studentName}</b> (${r.studentClass})<br>
         Score: ${r.score}/${r.total}<br>
-        <button onclick='view(${JSON.stringify(JSON.stringify(r))})'>
-          View
-        </button>
+        <button onclick='view(${JSON.stringify(JSON.stringify(r))})'>View</button>
       </div>
     `;
   });
 
-  document.getElementById("results").innerHTML = html;
+  document.getElementById("results").innerHTML=html;
 };
 
 window.view = function(data){
   let r = JSON.parse(data);
 
-  let review = r.review.map((q,i)=>`
-    <div class="card">
-      Q${i+1}: ${q.question}<br>
-      Your: ${q.studentAnswer}<br>
-      Correct: ${q.correctAnswer}
-    </div>
-  `).join("");
+  let w = r.review.map((q,i)=>{
+    return `
+      <div class="card">
+        Q${i+1}: ${q.question}<br>
+        Your: ${q.studentAnswer}<br>
+        Correct: ${q.correctAnswer}
+      </div>
+    `;
+  }).join("");
 
   document.body.innerHTML += `
     <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:white;overflow:auto;padding:20px">
       <h2>${r.studentName}</h2>
-      ${review}
+      ${w}
       <button onclick="location.reload()">Close</button>
     </div>
   `;
