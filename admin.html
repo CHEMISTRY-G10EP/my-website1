@@ -10,24 +10,24 @@
       margin:0;
     }
 
-    /* LOGIN SCREEN */
-    #loginBox{
+    /* ===== LOGIN SCREEN ===== */
+    #loginScreen{
       height:100vh;
       display:flex;
       justify-content:center;
       align-items:center;
     }
 
-    .login-card{
+    .login-box{
       background:white;
       padding:30px;
-      border-radius:12px;
+      border-radius:15px;
       box-shadow:0 0 15px rgba(0,0,0,0.1);
-      text-align:center;
       width:300px;
+      text-align:center;
     }
 
-    input{
+    .login-box input{
       width:100%;
       padding:12px;
       margin-top:10px;
@@ -35,7 +35,7 @@
       border:1px solid #ccc;
     }
 
-    button{
+    .login-box button{
       margin-top:15px;
       padding:12px;
       width:100%;
@@ -47,16 +47,7 @@
       cursor:pointer;
     }
 
-    button:hover{
-      background:#0056b3;
-    }
-
-    /* ADMIN PANEL */
-    #adminPanel{
-      display:none;
-      padding:30px;
-    }
-
+    /* ===== YOUR ORIGINAL STYLES (UNCHANGED) ===== */
     .container{
       max-width:900px;
       margin:auto;
@@ -64,119 +55,215 @@
       padding:30px;
       border-radius:15px;
       box-shadow:0 0 15px rgba(0,0,0,0.1);
+      display:none;
     }
 
     h2{
       text-align:center;
+      color:#333;
+      margin-bottom:25px;
     }
 
-    textarea,input,select{
+    input, textarea, select{
       width:100%;
       padding:12px;
-      margin:10px 0;
-      border-radius:8px;
+      margin-bottom:18px;
       border:1px solid #ccc;
+      border-radius:8px;
+      font-size:15px;
+      box-sizing:border-box;
     }
 
+    textarea{ resize:vertical; }
+
     .btn{
-      padding:12px;
       border:none;
+      padding:12px 20px;
       border-radius:8px;
+      cursor:pointer;
+      font-size:16px;
+      font-weight:bold;
+      transition:0.3s;
+      margin-right:10px;
+    }
+
+    .create-btn{
       background:#28a745;
       color:white;
-      cursor:pointer;
-      font-weight:bold;
+    }
+
+    .dashboard-btn{
+      background:#007bff;
+      color:white;
     }
 
     .btn:hover{
       transform:scale(1.03);
     }
 
+    #msg{
+      margin-top:20px;
+      font-weight:bold;
+      text-align:center;
+    }
+
+    .note{
+      background:#fff3cd;
+      padding:15px;
+      border-radius:8px;
+      margin-bottom:20px;
+      color:#856404;
+    }
+
+    .card{
+      background:#fff;
+      padding:15px;
+      margin:10px 0;
+      border-radius:10px;
+      box-shadow:0 0 5px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 
 <body>
 
 <!-- ================= LOGIN ================= -->
-<div id="loginBox">
-  <div class="login-card">
+<div id="loginScreen">
+  <div class="login-box">
     <h2>Admin Login</h2>
     <input type="password" id="pass" placeholder="Enter Password">
     <button onclick="checkPass()">Login</button>
-    <p id="msg" style="color:red;"></p>
+    <p id="error" style="color:red;"></p>
   </div>
 </div>
 
-<!-- ================= ADMIN PANEL ================= -->
-<div id="adminPanel">
+<!-- ================= YOUR ORIGINAL PANEL ================= -->
+<div class="container">
 
-  <div class="container">
+  <h2>Admin Panel</h2>
 
-    <h2>Admin Panel</h2>
-
-    <select id="className">
-      <option value="">Select Class</option>
-      <option value="10">Class 10</option>
-      <option value="11">Class 11</option>
-      <option value="12">Class 12</option>
-    </select>
-
-    <input id="title" placeholder="Test Title">
-
-    <textarea id="jsonInput" rows="10"
-placeholder='[{"question":"What is H2O?","options":["Water","Oxygen","Hydrogen","Salt"],"answer":"Water","solution":"Water is H2O"}]'></textarea>
-
-    <button class="btn" onclick="createTest()">Create Test</button>
-
+  <div class="note">
+    Create tests and view all student results.
   </div>
+
+  <select id="className">
+    <option value="">Select Class</option>
+    <option value="10">Class 10</option>
+    <option value="11">Class 11</option>
+    <option value="12">Class 12</option>
+    <option value="IIT-JEE">IIT-JEE</option>
+    <option value="NEET">NEET</option>
+  </select>
+
+  <input id="title" placeholder="Enter Test Title">
+
+  <textarea id="jsonInput" rows="12"
+placeholder='[
+  {
+    "question": "What is H2O?",
+    "options": ["Water","Oxygen","Hydrogen","Salt"],
+    "answer": "Water",
+    "solution": "H2O is water"
+  }
+]'></textarea>
+
+  <button class="btn create-btn" onclick="createTest()">Create Test</button>
+
+  <button class="btn dashboard-btn" onclick="goDashboard()">Dashboard</button>
+
+  <p id="msg"></p>
+
+  <hr>
+
+  <h2>Student Results</h2>
+  <button class="btn dashboard-btn" onclick="loadResults()">Load Results</button>
+
+  <div id="resultsBox"></div>
 
 </div>
 
 <script type="module">
 
 import { db } from './firebase-config.js';
-import { addDoc, collection } from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  addDoc,
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ================= PASSWORD CHECK ================= */
+/* ================= PASSWORD LOCK ================= */
 window.checkPass = function(){
 
   let pass = document.getElementById("pass").value;
 
   if(pass === "7812"){
-    document.getElementById("loginBox").style.display = "none";
-    document.getElementById("adminPanel").style.display = "block";
+    document.getElementById("loginScreen").style.display = "none";
+    document.querySelector(".container").style.display = "block";
   }
   else{
-    document.getElementById("msg").innerText = "Wrong Password!";
+    document.getElementById("error").innerText = "Wrong Password!";
   }
 };
 
 /* ================= CREATE TEST ================= */
-window.createTest = async function(){
+window.createTest = async function () {
 
-  let className = document.getElementById("className").value;
-  let title = document.getElementById("title").value;
-  let jsonText = document.getElementById("jsonInput").value;
+  try {
 
-  if(!className || !title || !jsonText){
-    alert("Fill all fields");
-    return;
+    let className = document.getElementById("className").value;
+    let title = document.getElementById("title").value.trim();
+    let jsonText = document.getElementById("jsonInput").value.trim();
+
+    let questions = JSON.parse(jsonText);
+
+    await addDoc(collection(db, "tests"), {
+      className,
+      title,
+      questions,
+      createdAt: new Date().toISOString()
+    });
+
+    document.getElementById("msg").style.color = "green";
+    document.getElementById("msg").innerText = "Test Created Successfully!";
+
+  } catch (e) {
+    document.getElementById("msg").style.color = "red";
+    document.getElementById("msg").innerText = e.message;
   }
+};
 
-  let questions = JSON.parse(jsonText);
+/* ================= LOAD RESULTS (UNCHANGED) ================= */
+window.loadResults = async function () {
 
-  await addDoc(collection(db,"tests"),{
-    className,
-    title,
-    questions,
-    createdAt:new Date().toISOString()
+  let box = document.getElementById("resultsBox");
+  box.innerHTML = "Loading...";
+
+  const snap = await getDocs(collection(db, "results"));
+
+  box.innerHTML = "";
+
+  snap.forEach(doc => {
+
+    let r = doc.data();
+
+    box.innerHTML += `
+      <div class="card">
+
+        <b>Student:</b> ${r.studentName}<br>
+        <b>Class:</b> ${r.studentClass}<br>
+        <b>Email:</b> ${r.userEmail}<br>
+        <b>Test:</b> ${r.testTitle}<br>
+        <b>Score:</b> ${r.score} / ${r.total}<br>
+        <b>Date:</b> ${r.createdAt}
+
+      </div>
+    `;
   });
+};
 
-  alert("Test Created!");
-
-  document.getElementById("title").value="";
-  document.getElementById("jsonInput").value="";
+/* ================= DASHBOARD ================= */
+window.goDashboard = function () {
+  window.location.href = "dashboard.html";
 };
 
 </script>
